@@ -3,10 +3,11 @@ import { ApiClientError } from '../api/client'
 import * as bookingsApi from '../api/bookings'
 import * as customersApi from '../api/customers'
 import * as servicesApi from '../api/services'
+import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
 import { useAuth } from '../context/AuthContext'
 import type { Booking, BookingStatus, Service } from '../types/api'
 
-type Tab = 'bookings' | 'services' | 'new-booking'
+type Tab = 'bookings' | 'services' | 'opening-hours' | 'new-booking'
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString()
@@ -96,6 +97,12 @@ export function DashboardPage() {
           Services
         </button>
         <button
+          className={`tab ${tab === 'opening-hours' ? 'active' : ''}`}
+          onClick={() => setTab('opening-hours')}
+        >
+          Opening hours
+        </button>
+        <button
           className={`tab ${tab === 'new-booking' ? 'active' : ''}`}
           onClick={() => setTab('new-booking')}
         >
@@ -125,6 +132,9 @@ export function DashboardPage() {
               token={token!}
               onCreated={loadData}
             />
+          )}
+          {tab === 'opening-hours' && (
+            <OpeningHoursPanel businessId={businessId!} token={token!} />
           )}
           {tab === 'new-booking' && (
             <NewBookingPanel

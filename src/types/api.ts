@@ -48,6 +48,42 @@ export interface TimeSlot {
   endDatetime: string
 }
 
+export type DayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY'
+
+export interface ScheduleBreak {
+  id?: string
+  startTime: string
+  endTime: string
+  label?: string
+}
+
+export interface Schedule {
+  id: string
+  businessId: string
+  userId?: string
+  dayOfWeek: DayOfWeek
+  startTime: string
+  endTime: string
+  isActive: boolean
+  breaks: ScheduleBreak[]
+}
+
+export interface ScheduleRequest {
+  userId?: string
+  dayOfWeek: DayOfWeek
+  startTime: string
+  endTime: string
+  isActive?: boolean
+  breaks?: ScheduleBreak[]
+}
+
 export interface AuthResponse {
   accessToken: string
   refreshToken: string
