@@ -1,12 +1,29 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { AuthLayout, Layout } from './components/Layout'
 import { PublicLayout } from './components/PublicLayout'
 import { useAuth } from './context/AuthContext'
+import { resolveHashPath } from './lib/hashRedirect'
 import { BookBusinessPage } from './pages/BookBusinessPage'
 import { BrowseBusinessesPage } from './pages/BrowseBusinessesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+
+// Client sites send customers here as <host>/#<business-slug>; turn that
+// hash into the /book/:slug route on first load.
+function HashSlugRedirect() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const path = resolveHashPath(window.location.hash)
+    if (path) {
+      navigate(path, { replace: true })
+    }
+  }, [navigate])
+
+  return null
+}
 
 function OwnerRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -48,7 +65,9 @@ function HomeRedirect() {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <HashSlugRedirect />
+      <Routes>
       <Route path="/" element={<HomeRedirect />} />
 
       <Route element={<PublicLayout />}>
@@ -85,7 +104,8 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }

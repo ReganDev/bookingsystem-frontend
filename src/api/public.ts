@@ -5,6 +5,7 @@ import type {
   CustomerRequest,
   PublicBookingRequest,
   Service,
+  TimeSlot,
 } from '../types/api'
 
 export function listBusinesses() {
@@ -17,6 +18,17 @@ export function getBusinessBySlug(slug: string) {
 
 export function getActiveServices(businessId: string) {
   return apiRequest<Service[]>(`/public/businesses/${businessId}/services`)
+}
+
+export function getAvailability(
+  businessId: string,
+  serviceId: string,
+  date: string,
+) {
+  const params = new URLSearchParams({ serviceId, date })
+  return apiRequest<TimeSlot[]>(
+    `/public/businesses/${businessId}/availability?${params}`,
+  )
 }
 
 export function createPublicBooking(

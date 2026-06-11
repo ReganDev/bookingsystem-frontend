@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiClientError, getApiErrorMessage } from '../api/client'
 import * as publicApi from '../api/public'
-import type { Booking, Business, Service } from '../types/api'
+import type { Booking, Business, Service, TimeSlot } from '../types/api'
 
 function formatPrice(price?: number, currency = 'GBP') {
   if (price == null) return 'Price on request'
@@ -16,6 +16,20 @@ function formatDateTime(value: string) {
   return new Date(value).toLocaleString()
 }
 
+function formatTime(value: string) {
+  return new Date(value).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function toDateInputValue(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function BookBusinessPage() {
   const { slug } = useParams<{ slug: string }>()
   const [business, setBusiness] = useState<Business | null>(null)
@@ -26,7 +40,10 @@ export function BookBusinessPage() {
   const [confirmation, setConfirmation] = useState<Booking | null>(null)
 
   const [serviceId, setServiceId] = useState('')
-  const [startDatetime, setStartDatetime] = useState('')
+  const [selectedDate, setSelectedDate] = useState('')
+  const [slots, setSlots] = useState<TimeSlot[]>([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState('')
   const [customerNotes, setCustomerNotes] = useState('')
   const [customer, setCustomer] = useState({
     firstName: '',
@@ -61,22 +78,48 @@ export function BookBusinessPage() {
     loadBusiness()
   }, [loadBusiness])
 
-  async function handleSubmit(event: FormEvent) {
-    if (!business) return
+  const loadSlots = useCallback(async () => {
+    if (!business || !serviceId || !selectedDate) {
+      setSlots([])
+      return
+    }
 
+    setSlotsLoading(true)
+    setSelectedSlot('')
+
+    try {
+      const available = await publicApi.getAvailability(
+        business.id,
+        serviceId,
+        selectedDate,
+      )
+      setSlots(available)
+    } catch {
+      setSlots([])
+    } finally {
+      setSlotsLoading(false)
+    }
+  }, [business, serviceId, selectedDate])
+
+  useEffect(() => {
+    loadSlots()
+  }, [loadSlots])
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!business || !selectedSlot) return
+
     setSubmitting(true)
     setError(null)
 
     try {
-      const start = new Date(startDatetime)
       const booking = await publicApi.createPublicBooking(business.id, {
         customer: {
           ...customer,
           phone: customer.phone || undefined,
         },
         serviceId,
-        startDatetime: start.toISOString(),
+        startDatetime: selectedSlot,
         customerNotes: customerNotes || undefined,
       })
       setConfirmation(booking)
@@ -86,10 +129,16 @@ export function BookBusinessPage() {
           ? getApiErrorMessage(err.status, err.body)
           : 'Unable to create booking. Please try again.'
       setError(message)
+      // The slot may have been taken while the form was open
+      loadSlots()
     } finally {
       setSubmitting(false)
     }
   }
+
+  const today = new Date()
+  const maxDate = new Date(today)
+  maxDate.setDate(maxDate.getDate() + (business?.bookingAdvanceDays ?? 30))
 
   if (loading) {
     return (
@@ -199,15 +248,49 @@ export function BookBusinessPage() {
           <section className="form-section">
             <h4>2. Pick a date & time</h4>
             <div className="form-row">
-              <label htmlFor="startDatetime">Appointment time</label>
+              <label htmlFor="appointmentDate">Appointment date</label>
               <input
-                id="startDatetime"
-                type="datetime-local"
-                value={startDatetime}
-                onChange={(e) => setStartDatetime(e.target.value)}
+                id="appointmentDate"
+                type="date"
+                value={selectedDate}
+                min={toDateInputValue(today)}
+                max={toDateInputValue(maxDate)}
+                onChange={(e) => setSelectedDate(e.target.value)}
                 required
               />
             </div>
+
+            {!serviceId && selectedDate && (
+              <p className="slot-hint">Choose a service to see available times.</p>
+            )}
+
+            {serviceId && selectedDate && (
+              <div className="form-row">
+                <span className="form-label">Available times</span>
+                {slotsLoading ? (
+                  <p className="slot-hint">Checking availability…</p>
+                ) : slots.length === 0 ? (
+                  <p className="slot-hint">
+                    No available times on this date. Please try another day.
+                  </p>
+                ) : (
+                  <div className="slot-grid">
+                    {slots.map((slot) => (
+                      <button
+                        key={slot.startDatetime}
+                        type="button"
+                        className={`slot-option ${
+                          selectedSlot === slot.startDatetime ? 'selected' : ''
+                        }`}
+                        onClick={() => setSelectedSlot(slot.startDatetime)}
+                      >
+                        {formatTime(slot.startDatetime)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="form-section">
@@ -279,7 +362,11 @@ export function BookBusinessPage() {
             </div>
           </section>
 
-          <button className="btn btn-primary" type="submit" disabled={submitting}>
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={submitting || !selectedSlot}
+          >
             {submitting ? 'Submitting…' : 'Request booking'}
           </button>
         </form>

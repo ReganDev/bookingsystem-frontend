@@ -35,7 +35,17 @@ export interface Business {
   timezone?: string
   currency?: string
   logoUrl?: string
+  bookingAdvanceDays?: number
+  bookingNoticeHours?: number
+  cancellationNoticeHours?: number
+  slotDurationMinutes?: number
+  bufferMinutes?: number
   isActive?: boolean
+}
+
+export interface TimeSlot {
+  startDatetime: string
+  endDatetime: string
 }
 
 export interface AuthResponse {
