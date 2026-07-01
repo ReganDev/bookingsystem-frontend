@@ -1,6 +1,6 @@
 import type { ApiError } from '../types/api'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://booking-backend-app-java-production.up.railway.app/api/v1'
+const API_BASE = '/api/v1'
 
 export class ApiClientError extends Error {
   status: number
