@@ -13,7 +13,7 @@ function formatDateTime(value: string) {
   return new Date(value).toLocaleString()
 }
 
-function formatPrice(price?: number, currency = 'USD') {
+function formatPrice(price?: number, currency = 'GBP') {
   if (price == null) return '—'
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
