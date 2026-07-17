@@ -497,7 +497,7 @@ function NewBookingPanel({
     setError(null)
 
     try {
-      const createdCustomer = await customersApi.createCustomer(
+      const createdCustomer = await customersApi.getOrCreateCustomer(
         businessId,
         {
           ...customer,

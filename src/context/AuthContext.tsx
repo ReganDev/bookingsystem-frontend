@@ -8,16 +8,14 @@ import {
   type ReactNode,
 } from 'react'
 import * as authApi from '../api/auth'
+import {
+  AUTH_CHANGED_EVENT,
+  clearAuth,
+  loadStoredAuth,
+  saveAuth,
+  type StoredAuth,
+} from '../lib/authStorage'
 import type { AuthResponse, LoginRequest } from '../types/api'
-
-const STORAGE_KEY = 'booking-auth'
-
-type StoredAuth = {
-  accessToken: string
-  refreshToken: string
-  user: AuthResponse['user']
-  business: AuthResponse['business']
-}
 
 type AuthContextValue = {
   user: AuthResponse['user'] | null
@@ -31,27 +29,6 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-function loadStoredAuth(): StoredAuth | null {
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as StoredAuth
-  } catch {
-    return null
-  }
-}
-
-function saveAuth(response: AuthResponse) {
-  const stored: StoredAuth = {
-    accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
-    user: response.user,
-    business: response.business,
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
-  return stored
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [stored, setStored] = useState<StoredAuth | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -59,20 +36,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setStored(loadStoredAuth())
     setIsLoading(false)
+
+    // Keep React state in sync when the API client refreshes tokens or
+    // clears an expired session.
+    const sync = () => setStored(loadStoredAuth())
+    window.addEventListener(AUTH_CHANGED_EVENT, sync)
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, sync)
   }, [])
 
-  const applyAuth = useCallback((response: AuthResponse) => {
-    const next = saveAuth(response)
-    setStored(next)
+  const login = useCallback(async (request: LoginRequest) => {
+    const response = await authApi.login(request)
+    setStored(saveAuth(response))
   }, [])
-
-  const login = useCallback(
-    async (request: LoginRequest) => {
-      const response = await authApi.login(request)
-      applyAuth(response)
-    },
-    [applyAuth],
-  )
 
   const logout = useCallback(async () => {
     if (stored?.refreshToken) {
@@ -82,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Ignore logout errors and clear local session anyway.
       }
     }
-    localStorage.removeItem(STORAGE_KEY)
+    clearAuth()
     setStored(null)
   }, [stored?.refreshToken])
 

@@ -12,3 +12,19 @@ export function createCustomer(
     token,
   })
 }
+
+/** Returns the existing customer for this email, or creates one. */
+export function getOrCreateCustomer(
+  businessId: string,
+  request: CustomerRequest,
+  token: string,
+) {
+  return apiRequest<Customer>(
+    `/businesses/${businessId}/customers/get-or-create`,
+    {
+      method: 'POST',
+      body: request,
+      token,
+    },
+  )
+}
