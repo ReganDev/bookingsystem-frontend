@@ -4,21 +4,24 @@ import * as bookingsApi from '../api/bookings'
 import * as customersApi from '../api/customers'
 import * as schedulesApi from '../api/schedules'
 import * as servicesApi from '../api/services'
+import { CalendarPanel } from '../components/CalendarPanel'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
 import { useAuth } from '../context/AuthContext'
 import type { Booking, BookingStatus, Service } from '../types/api'
 
-type Tab = 'bookings' | 'services' | 'opening-hours' | 'new-booking'
+type Tab = 'bookings' | 'calendar' | 'services' | 'opening-hours' | 'new-booking'
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   bookings:
     'Appointments your customers have made. Confirm, complete, or cancel them here.',
+  calendar:
+    'Your bookings laid out by month. Click a day to see its appointments.',
   services:
-    'The treatments or appointments customers can book — each needs a name and how long it takes.',
+    'The treatments or appointments customers can book. Each needs a name and how long it takes.',
   'opening-hours':
     'The days and times you accept bookings. Customers can only pick slots inside these hours.',
   'new-booking':
-    'Add a booking yourself — useful for phone or walk-in customers.',
+    'Add a booking yourself, useful for phone or walk-in customers.',
 }
 
 function formatDateTime(value: string) {
@@ -26,7 +29,7 @@ function formatDateTime(value: string) {
 }
 
 function formatPrice(price?: number, currency = 'GBP') {
-  if (price == null) return '—'
+  if (price == null) return '-'
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency,
@@ -115,7 +118,7 @@ export function DashboardPage() {
               </span>
               <span className="step-text">
                 {services.length > 0 ? (
-                  'Add a service — done!'
+                  'Add a service (done!)'
                 ) : (
                   <>
                     <button
@@ -123,8 +126,8 @@ export function DashboardPage() {
                       onClick={() => setTab('services')}
                     >
                       Add your first service
-                    </button>{' '}
-                    — e.g. “Haircut, 30 minutes”
+                    </button>
+                    , e.g. “Haircut, 30 minutes”
                   </>
                 )}
               </span>
@@ -133,7 +136,7 @@ export function DashboardPage() {
               <span className="step-marker">{hasOpeningHours ? '✓' : '2'}</span>
               <span className="step-text">
                 {hasOpeningHours ? (
-                  'Set your opening hours — done!'
+                  'Set your opening hours (done!)'
                 ) : (
                   <>
                     <button
@@ -141,8 +144,8 @@ export function DashboardPage() {
                       onClick={() => setTab('opening-hours')}
                     >
                       Set your opening hours
-                    </button>{' '}
-                    — the days and times customers can book
+                    </button>
+                    , the days and times customers can book
                   </>
                 )}
               </span>
@@ -157,6 +160,12 @@ export function DashboardPage() {
           onClick={() => setTab('bookings')}
         >
           Bookings
+        </button>
+        <button
+          className={`tab ${tab === 'calendar' ? 'active' : ''}`}
+          onClick={() => setTab('calendar')}
+        >
+          Calendar
         </button>
         <button
           className={`tab ${tab === 'services' ? 'active' : ''}`}
@@ -194,6 +203,9 @@ export function DashboardPage() {
               currency={business?.currency}
               onStatusChange={handleStatusChange}
             />
+          )}
+          {tab === 'calendar' && (
+            <CalendarPanel businessId={businessId!} token={token!} />
           )}
           {tab === 'services' && (
             <ServicesPanel
@@ -380,7 +392,7 @@ function ServicesPanel({
         <div className="empty-state">
           <strong>No services yet</strong>
           <p>
-            A service is anything a customer can book — for example “Haircut,
+            A service is anything a customer can book, for example “Haircut,
             30 minutes, £25”. Click “Add service” above to create your first
             one.
           </p>

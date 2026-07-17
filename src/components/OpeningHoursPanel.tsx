@@ -227,7 +227,7 @@ export function OpeningHoursPanel({
       )}
       {noDaysOpen && (
         <div className="empty-state">
-          No opening hours set — your booking page will show no available
+          No opening hours set. Your booking page will show no available
           times until you open at least one day.
         </div>
       )}

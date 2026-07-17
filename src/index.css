@@ -699,6 +699,135 @@ button {
   font-size: 0.9rem;
 }
 
+/* ---------- Calendar ---------- */
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-fg-subtle);
+  padding: 0.35rem 0;
+}
+
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  min-height: 84px;
+  padding: 0.35rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.calendar-day:hover {
+  border-color: var(--color-border-strong);
+}
+
+.calendar-day.other-month {
+  background: var(--color-bg);
+  color: var(--color-fg-subtle);
+}
+
+.calendar-day.today {
+  border-color: var(--color-primary);
+}
+
+.calendar-day.today .calendar-day-number {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.calendar-day.selected {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.calendar-day-number {
+  align-self: flex-start;
+  font-size: 0.8rem;
+  font-weight: 700;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+}
+
+.calendar-day-chips {
+  display: grid;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.calendar-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  background: var(--color-primary-soft);
+  color: #1e40af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-chip.chip-CANCELLED {
+  background: var(--color-danger-soft);
+  color: #991b1b;
+  text-decoration: line-through;
+}
+
+.calendar-chip.chip-COMPLETED {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.calendar-chip.chip-PENDING {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.calendar-chip.chip-more {
+  background: transparent;
+  color: var(--color-fg-subtle);
+}
+
+.calendar-day-detail {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.calendar-day-detail h4 {
+  margin: 0 0 0.75rem;
+}
+
+@media (max-width: 700px) {
+  .calendar-day {
+    min-height: 56px;
+  }
+
+  .calendar-day-chips {
+    display: none;
+  }
+
+  .calendar-day.has-bookings .calendar-day-number {
+    background: var(--color-primary-soft);
+  }
+}
+
 /* ---------- Opening hours ---------- */
 
 .schedule-grid {

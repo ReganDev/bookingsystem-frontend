@@ -62,7 +62,7 @@ export function ContactPage() {
       <h2>Get in touch</h2>
       <p>
         Want to take bookings for your business? Accounts are set up personally
-        for each business — send us a message and we&apos;ll get you started.
+        for each business. Send us a message and we&apos;ll get you started.
       </p>
 
       {error && <div className="error-banner">{error}</div>}

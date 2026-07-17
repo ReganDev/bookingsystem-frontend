@@ -12,6 +12,19 @@ export function getBookings(businessId: string, token: string) {
   })
 }
 
+export function getBookingsInRange(
+  businessId: string,
+  start: string,
+  end: string,
+  token: string,
+) {
+  const params = new URLSearchParams({ start, end })
+  return apiRequest<Booking[]>(
+    `/businesses/${businessId}/bookings/range?${params}`,
+    { token },
+  )
+}
+
 export function createBooking(
   businessId: string,
   request: BookingRequest,
