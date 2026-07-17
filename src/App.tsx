@@ -6,9 +6,9 @@ import { useAuth } from './context/AuthContext'
 import { resolveHashPath } from './lib/hashRedirect'
 import { BookBusinessPage } from './pages/BookBusinessPage'
 import { BrowseBusinessesPage } from './pages/BrowseBusinessesPage'
+import { ContactPage } from './pages/ContactPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
-import { RegisterPage } from './pages/RegisterPage'
 
 // Client sites send customers here as <host>/#<business-slug>; turn that
 // hash into the /book/:slug route on first load.
@@ -84,14 +84,8 @@ export default function App() {
             </GuestAuthRoute>
           }
         />
-        <Route
-          path="/register"
-          element={
-            <GuestAuthRoute>
-              <RegisterPage />
-            </GuestAuthRoute>
-          }
-        />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/register" element={<Navigate to="/contact" replace />} />
       </Route>
 
       <Route

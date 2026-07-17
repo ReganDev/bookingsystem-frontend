@@ -34,7 +34,7 @@ export function AuthLayout() {
       <p className="auth-footer">
         <Link to="/book">Book an appointment</Link> ·{' '}
         <Link to="/login">Business login</Link> ·{' '}
-        <Link to="/register">Register a business</Link>
+        <Link to="/contact">Contact us</Link>
       </p>
     </div>
   )

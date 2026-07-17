@@ -69,7 +69,8 @@ export function LoginPage() {
       </form>
 
       <p className="auth-footer">
-        New here? <Link to="/register">Create an account</Link>
+        Accounts are set up personally for each business.{' '}
+        <Link to="/contact">Get in touch</Link> to request one.
       </p>
     </div>
   )

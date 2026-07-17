@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import * as authApi from '../api/auth'
-import type { AuthResponse, LoginRequest, RegisterRequest } from '../types/api'
+import type { AuthResponse, LoginRequest } from '../types/api'
 
 const STORAGE_KEY = 'booking-auth'
 
@@ -26,7 +26,6 @@ type AuthContextValue = {
   isAuthenticated: boolean
   isLoading: boolean
   login: (request: LoginRequest) => Promise<void>
-  register: (request: RegisterRequest) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -75,14 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [applyAuth],
   )
 
-  const register = useCallback(
-    async (request: RegisterRequest) => {
-      const response = await authApi.register(request)
-      applyAuth(response)
-    },
-    [applyAuth],
-  )
-
   const logout = useCallback(async () => {
     if (stored?.refreshToken) {
       try {
@@ -103,10 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(stored?.accessToken),
       isLoading,
       login,
-      register,
       logout,
     }),
-    [stored, isLoading, login, register, logout],
+    [stored, isLoading, login, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

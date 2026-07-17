@@ -41,4 +41,18 @@ export function createPublicBooking(
   })
 }
 
+export type EnquiryRequest = {
+  name: string
+  email: string
+  businessName?: string
+  message: string
+}
+
+export function submitEnquiry(request: EnquiryRequest) {
+  return apiRequest<void>('/public/enquiry', {
+    method: 'POST',
+    body: request,
+  })
+}
+
 export type { CustomerRequest, PublicBookingRequest }

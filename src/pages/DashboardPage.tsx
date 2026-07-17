@@ -2,12 +2,24 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { ApiClientError } from '../api/client'
 import * as bookingsApi from '../api/bookings'
 import * as customersApi from '../api/customers'
+import * as schedulesApi from '../api/schedules'
 import * as servicesApi from '../api/services'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
 import { useAuth } from '../context/AuthContext'
 import type { Booking, BookingStatus, Service } from '../types/api'
 
 type Tab = 'bookings' | 'services' | 'opening-hours' | 'new-booking'
+
+const TAB_DESCRIPTIONS: Record<Tab, string> = {
+  bookings:
+    'Appointments your customers have made. Confirm, complete, or cancel them here.',
+  services:
+    'The treatments or appointments customers can book — each needs a name and how long it takes.',
+  'opening-hours':
+    'The days and times you accept bookings. Customers can only pick slots inside these hours.',
+  'new-booking':
+    'Add a booking yourself — useful for phone or walk-in customers.',
+}
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString()
@@ -26,6 +38,7 @@ export function DashboardPage() {
   const [tab, setTab] = useState<Tab>('bookings')
   const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [hasOpeningHours, setHasOpeningHours] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -39,12 +52,14 @@ export function DashboardPage() {
     setError(null)
 
     try {
-      const [bookingsPage, serviceList] = await Promise.all([
+      const [bookingsPage, serviceList, scheduleList] = await Promise.all([
         bookingsApi.getBookings(businessId, token),
         servicesApi.getServices(businessId, token),
+        schedulesApi.getSchedules(businessId, token),
       ])
       setBookings(bookingsPage.content)
       setServices(serviceList)
+      setHasOpeningHours(scheduleList.length > 0)
     } catch (err) {
       const message =
         err instanceof ApiClientError
@@ -81,8 +96,61 @@ export function DashboardPage() {
     }
   }
 
+  const setupComplete = services.length > 0 && hasOpeningHours
+
   return (
     <>
+      {!loading && !setupComplete && (
+        <div className="onboarding">
+          <h3>Getting started</h3>
+          <p>
+            Two quick steps and customers will be able to book with you online.
+          </p>
+          <ol className="onboarding-steps">
+            <li
+              className={`onboarding-step ${services.length > 0 ? 'done' : ''}`}
+            >
+              <span className="step-marker">
+                {services.length > 0 ? '✓' : '1'}
+              </span>
+              <span className="step-text">
+                {services.length > 0 ? (
+                  'Add a service — done!'
+                ) : (
+                  <>
+                    <button
+                      className="step-link"
+                      onClick={() => setTab('services')}
+                    >
+                      Add your first service
+                    </button>{' '}
+                    — e.g. “Haircut, 30 minutes”
+                  </>
+                )}
+              </span>
+            </li>
+            <li className={`onboarding-step ${hasOpeningHours ? 'done' : ''}`}>
+              <span className="step-marker">{hasOpeningHours ? '✓' : '2'}</span>
+              <span className="step-text">
+                {hasOpeningHours ? (
+                  'Set your opening hours — done!'
+                ) : (
+                  <>
+                    <button
+                      className="step-link"
+                      onClick={() => setTab('opening-hours')}
+                    >
+                      Set your opening hours
+                    </button>{' '}
+                    — the days and times customers can book
+                  </>
+                )}
+              </span>
+            </li>
+          </ol>
+        </div>
+      )}
+
       <div className="tabs">
         <button
           className={`tab ${tab === 'bookings' ? 'active' : ''}`}
@@ -110,6 +178,8 @@ export function DashboardPage() {
         </button>
       </div>
 
+      <p className="tab-description">{TAB_DESCRIPTIONS[tab]}</p>
+
       {error && <div className="error-banner">{error}</div>}
 
       {loading ? (
@@ -128,13 +198,18 @@ export function DashboardPage() {
           {tab === 'services' && (
             <ServicesPanel
               services={services}
+              currency={business?.currency}
               businessId={businessId!}
               token={token!}
               onCreated={loadData}
             />
           )}
           {tab === 'opening-hours' && (
-            <OpeningHoursPanel businessId={businessId!} token={token!} />
+            <OpeningHoursPanel
+              businessId={businessId!}
+              token={token!}
+              onSaved={loadData}
+            />
           )}
           {tab === 'new-booking' && (
             <NewBookingPanel
@@ -170,7 +245,14 @@ function BookingsPanel({
       </div>
 
       {bookings.length === 0 ? (
-        <div className="empty-state">No bookings yet. Create your first one.</div>
+        <div className="empty-state">
+          <strong>No bookings yet</strong>
+          <p>
+            Bookings made by customers (or by you in the “New booking” tab)
+            will appear here. Share your booking page with customers to get
+            started.
+          </p>
+        </div>
       ) : (
         <div className="list">
           {bookings.map((booking) => (
@@ -226,11 +308,13 @@ function BookingsPanel({
 
 function ServicesPanel({
   services,
+  currency,
   businessId,
   token,
   onCreated,
 }: {
   services: Service[]
+  currency?: string
   businessId: string
   token: string
   onCreated: () => Promise<void>
@@ -293,7 +377,14 @@ function ServicesPanel({
       {error && <div className="error-banner">{error}</div>}
 
       {services.length === 0 ? (
-        <div className="empty-state">No services yet. Add one to get started.</div>
+        <div className="empty-state">
+          <strong>No services yet</strong>
+          <p>
+            A service is anything a customer can book — for example “Haircut,
+            30 minutes, £25”. Click “Add service” above to create your first
+            one.
+          </p>
+        </div>
       ) : (
         <div className="list">
           {services.map((service) => (
@@ -301,7 +392,9 @@ function ServicesPanel({
               <div className="list-item-title">{service.name}</div>
               <div className="list-item-meta">
                 {service.durationMinutes} min ·{' '}
-                {service.price != null ? `$${service.price}` : 'No price set'}
+                {service.price != null
+                  ? formatPrice(service.price, currency)
+                  : 'No price set'}
               </div>
               {service.description && (
                 <div className="list-item-meta">{service.description}</div>
@@ -441,7 +534,11 @@ function NewBookingPanel({
 
       {activeServices.length === 0 ? (
         <div className="empty-state">
-          Add at least one active service before creating bookings.
+          <strong>Add a service first</strong>
+          <p>
+            Bookings are always for a service. Go to the “Services” tab and
+            add one, then come back here.
+          </p>
         </div>
       ) : (
         <>
