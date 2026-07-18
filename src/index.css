@@ -799,6 +799,13 @@ button {
   visibility: hidden;
 }
 
+.booking-day.unavailable {
+  color: var(--color-fg-subtle);
+  opacity: 0.45;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
 .booking-day.available {
   background: var(--color-primary-soft);
   color: var(--color-primary-hover);
@@ -819,6 +826,25 @@ button {
   background: var(--color-primary);
   color: var(--color-on-primary);
   outline: none;
+}
+
+.calendar-notice {
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  color: var(--color-fg-muted);
+}
+
+.calendar-notice strong {
+  display: block;
+  color: var(--color-fg);
+  margin-bottom: 0.25rem;
+}
+
+.calendar-notice p {
+  margin: 0;
 }
 
 .booking-summary {

@@ -128,7 +128,7 @@ export function BookingCalendar({
               type="button"
               className={[
                 'booking-day',
-                available ? 'available' : '',
+                available ? 'available' : 'unavailable',
                 isSelected ? 'selected' : '',
                 dateKey(day) === todayKey ? 'today' : '',
               ]
@@ -137,7 +137,9 @@ export function BookingCalendar({
               disabled={!available}
               onClick={() => onSelect(iso)}
               aria-label={fullDateLabel(day)}
+              aria-disabled={!available}
               aria-pressed={isSelected}
+              title={available ? undefined : 'No appointments on this day'}
             >
               {day.getDate()}
             </button>
@@ -145,13 +147,22 @@ export function BookingCalendar({
         })}
       </div>
 
-      <p className="slot-hint">
-        {loading
-          ? 'Checking availability…'
-          : availableDays.size === 0
-            ? 'No availability this month. Try the next one.'
-            : 'Highlighted days have appointments available.'}
-      </p>
+      {loading ? (
+        <p className="slot-hint">Checking availability…</p>
+      ) : availableDays.size === 0 ? (
+        <div className="calendar-notice">
+          <strong>No free appointments this month</strong>
+          <p>
+            Days shown crossed out have nothing available. Try the next month
+            with the arrow above, or pick a different service.
+          </p>
+        </div>
+      ) : (
+        <p className="slot-hint">
+          Highlighted days have appointments available. Crossed-out days are
+          fully booked or closed.
+        </p>
+      )}
     </div>
   )
 }
