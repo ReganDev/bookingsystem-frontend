@@ -70,7 +70,35 @@ beforeEach(() => {
   vi.mocked(publicApi.getBusinessBySlug).mockResolvedValue(business)
   vi.mocked(publicApi.getActiveServices).mockResolvedValue([haircut])
   vi.mocked(publicApi.getAvailability).mockResolvedValue(slots)
+  vi.mocked(publicApi.getAvailableDays).mockResolvedValue([
+    toDateInput(slotNine),
+  ])
 })
+
+function calendarDayLabel(date: Date) {
+  return date.toLocaleDateString(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
+/** Click the calendar day for the given date, paging to the next month
+ *  when "tomorrow" falls across a month boundary. */
+async function chooseDay(
+  user: ReturnType<typeof userEvent.setup>,
+  date: Date,
+) {
+  const label = calendarDayLabel(date)
+  let dayButton = screen.queryByRole('button', { name: label })
+  if (!dayButton) {
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    dayButton = await screen.findByRole('button', { name: label })
+  }
+  await waitFor(() => expect(dayButton).toBeEnabled())
+  await user.click(dayButton!)
+}
 
 describe('BookBusinessPage', () => {
   it('loads the business for the slug in the URL', async () => {
@@ -92,9 +120,7 @@ describe('BookBusinessPage', () => {
     await screen.findByText('Haircut')
     await user.click(screen.getByRole('radio'))
 
-    const dateInput = screen.getByLabelText('Appointment date')
-    await user.clear(dateInput)
-    await user.type(dateInput, toDateInput(slotNine))
+    await chooseDay(user, slotNine)
 
     await waitFor(() =>
       expect(publicApi.getAvailability).toHaveBeenCalledWith(
@@ -119,10 +145,7 @@ describe('BookBusinessPage', () => {
     expect(screen.getByRole('button', { name: 'Request booking' })).toBeDisabled()
 
     await user.click(screen.getByRole('radio'))
-    await user.type(
-      screen.getByLabelText('Appointment date'),
-      toDateInput(slotNine),
-    )
+    await chooseDay(user, slotNine)
     const [firstSlot] = await screen.findAllByRole('button', {
       name: /\d{1,2}:\d{2}/,
     })
@@ -154,10 +177,7 @@ describe('BookBusinessPage', () => {
 
     await screen.findByText('Haircut')
     await user.click(screen.getByRole('radio'))
-    await user.type(
-      screen.getByLabelText('Appointment date'),
-      toDateInput(slotNine),
-    )
+    await chooseDay(user, slotNine)
     const [firstSlot] = await screen.findAllByRole('button', {
       name: /\d{1,2}:\d{2}/,
     })
@@ -191,10 +211,7 @@ describe('BookBusinessPage', () => {
 
     await screen.findByText('Haircut')
     await user.click(screen.getByRole('radio'))
-    await user.type(
-      screen.getByLabelText('Appointment date'),
-      toDateInput(slotNine),
-    )
+    await chooseDay(user, slotNine)
 
     expect(
       await screen.findByText(/No available times on this date/),

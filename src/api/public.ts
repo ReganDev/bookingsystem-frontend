@@ -20,6 +20,18 @@ export function getActiveServices(businessId: string) {
   return apiRequest<Service[]>(`/public/businesses/${businessId}/services`)
 }
 
+/** Days in a month (yyyy-MM) with at least one bookable slot, as yyyy-MM-dd. */
+export function getAvailableDays(
+  businessId: string,
+  serviceId: string,
+  month: string,
+) {
+  const params = new URLSearchParams({ serviceId, month })
+  return apiRequest<string[]>(
+    `/public/businesses/${businessId}/availability/days?${params}`,
+  )
+}
+
 export function getAvailability(
   businessId: string,
   serviceId: string,

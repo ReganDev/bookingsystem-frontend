@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiClientError, getApiErrorMessage } from '../api/client'
 import * as publicApi from '../api/public'
+import { BookingCalendar } from '../components/BookingCalendar'
 import { useAuth } from '../context/AuthContext'
 import type { Booking, Business, Service, TimeSlot } from '../types/api'
 
@@ -24,11 +25,12 @@ function formatTime(value: string) {
   })
 }
 
-function toDateInputValue(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+function formatDayHeading(isoDate: string) {
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
 }
 
 export function BookBusinessPage() {
@@ -150,10 +152,6 @@ export function BookBusinessPage() {
     }
   }
 
-  const today = new Date()
-  const maxDate = new Date(today)
-  maxDate.setDate(maxDate.getDate() + (business?.bookingAdvanceDays ?? 30))
-
   if (loading) {
     return (
       <div className="panel">
@@ -182,21 +180,28 @@ export function BookBusinessPage() {
           <p>
             Your appointment with <strong>{business.name}</strong> for{' '}
             <strong>{confirmation.service.name}</strong> on{' '}
-            {formatDateTime(confirmation.startDatetime)} has been submitted.
+            <strong>{formatDateTime(confirmation.startDatetime)}</strong> has
+            been sent.
           </p>
-          <p className="list-item-meta">Status: {confirmation.status}</p>
         </div>
+        <p className="panel-subtitle">
+          {business.name} will confirm your appointment. You&apos;ll hear back
+          at <strong>{confirmation.customer.email}</strong>. There&apos;s
+          nothing else you need to do.
+        </p>
         <div className="actions-row">
           <Link to="/book" className="btn btn-secondary">
             Book with another business
           </Link>
           <Link to={`/book/${business.slug}`} className="btn btn-primary">
-            Book again
+            Make another booking
           </Link>
         </div>
       </div>
     )
   }
+
+  const selectedService = services.find((service) => service.id === serviceId)
 
   return (
     <div className="panel">
@@ -260,27 +265,30 @@ export function BookBusinessPage() {
           </section>
 
           <section className="form-section">
-            <h4>2. Pick a date & time</h4>
-            <div className="form-row">
-              <label htmlFor="appointmentDate">Appointment date</label>
-              <input
-                id="appointmentDate"
-                type="date"
-                value={selectedDate}
-                min={toDateInputValue(today)}
-                max={toDateInputValue(maxDate)}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                required
+            <h4>2. Pick a day</h4>
+            {!serviceId ? (
+              <p className="slot-hint">
+                Choose a service first and we&apos;ll show you the days with
+                free appointments.
+              </p>
+            ) : (
+              <BookingCalendar
+                businessId={business.id}
+                serviceId={serviceId}
+                advanceDays={business.bookingAdvanceDays ?? 30}
+                selectedDate={selectedDate}
+                onSelect={setSelectedDate}
               />
-            </div>
-
-            {!serviceId && selectedDate && (
-              <p className="slot-hint">Choose a service to see available times.</p>
             )}
+          </section>
 
-            {serviceId && selectedDate && (
+          {serviceId && selectedDate && (
+            <section className="form-section">
+              <h4>3. Pick a time</h4>
               <div className="form-row">
-                <span className="form-label">Available times</span>
+                <span className="form-label">
+                  Times for {formatDayHeading(selectedDate)}
+                </span>
                 {slotsLoading ? (
                   <p className="slot-hint">Checking availability…</p>
                 ) : slots.length === 0 ? (
@@ -304,11 +312,17 @@ export function BookBusinessPage() {
                   </div>
                 )}
               </div>
-            )}
-          </section>
+            </section>
+          )}
 
           <section className="form-section">
-            <h4>3. Your details</h4>
+            <h4>4. Your details</h4>
+            {isCustomer && (
+              <p className="slot-hint">
+                We&apos;ve filled these in from your account. Change anything
+                that&apos;s not right.
+              </p>
+            )}
             <div className="form-row">
               <label htmlFor="firstName">First name</label>
               <input
@@ -375,6 +389,14 @@ export function BookBusinessPage() {
               />
             </div>
           </section>
+
+          {selectedService && selectedSlot && (
+            <div className="booking-summary">
+              <strong>{selectedService.name}</strong> ·{' '}
+              {formatDayHeading(selectedDate)} at {formatTime(selectedSlot)} ·{' '}
+              {formatPrice(selectedService.price, business.currency ?? 'GBP')}
+            </div>
+          )}
 
           <button
             className="btn btn-primary"

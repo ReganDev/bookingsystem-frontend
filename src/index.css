@@ -758,6 +758,77 @@ button {
   font-size: 0.9rem;
 }
 
+/* Customer-facing availability calendar */
+
+.booking-calendar {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 24rem;
+}
+
+.booking-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.booking-calendar-month {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.booking-calendar-grid {
+  gap: 3px;
+}
+
+.booking-day {
+  aspect-ratio: 1;
+  min-height: 2.4rem;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-fg-subtle);
+  font-weight: 600;
+  cursor: default;
+}
+
+.booking-day.placeholder {
+  visibility: hidden;
+}
+
+.booking-day.available {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.booking-day.available:hover {
+  background: #dbeafe;
+}
+
+.booking-day.today {
+  outline: 1.5px solid var(--color-border-strong);
+  outline-offset: -1.5px;
+}
+
+.booking-day.selected {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  outline: none;
+}
+
+.booking-summary {
+  background: var(--color-primary-soft);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+}
+
 .form-label {
   font-weight: 600;
   color: #334155;

@@ -1,38 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiClientError } from '../api/client'
 import * as bookingsApi from '../api/bookings'
+import { WEEKDAY_LABELS, buildMonthCells, dateKey } from '../lib/monthGrid'
 import type { Booking, BookingStatus } from '../types/api'
-
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-function dateKey(date: Date) {
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
-}
 
 function formatTime(value: string) {
   return new Date(value).toLocaleTimeString(undefined, {
     hour: '2-digit',
     minute: '2-digit',
   })
-}
-
-/** Calendar cells for a month view: leading days from the previous month
- *  (so weeks start on Monday), the month itself, then trailing days. */
-function buildMonthCells(year: number, month: number) {
-  const firstOfMonth = new Date(year, month, 1)
-  // getDay(): 0 = Sunday; shift so Monday = 0
-  const leading = (firstOfMonth.getDay() + 6) % 7
-  const start = new Date(year, month, 1 - leading)
-
-  const cells: Date[] = []
-  for (let i = 0; i < 42; i++) {
-    cells.push(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i))
-  }
-  // Drop the last row if it's entirely next month
-  if (cells[35].getMonth() !== month) {
-    return cells.slice(0, 35)
-  }
-  return cells
 }
 
 export function CalendarPanel({
