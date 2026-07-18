@@ -217,6 +217,18 @@ button {
   color: var(--color-fg-subtle);
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  flex: none;
+}
+
 .password-row {
   display: flex;
   gap: 0.5rem;

@@ -59,6 +59,8 @@ export function BookBusinessPage() {
   const [slotsLoading, setSlotsLoading] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState('')
   const [customerNotes, setCustomerNotes] = useState('')
+  const [emailReminder, setEmailReminder] = useState(true)
+  const [smsReminder, setSmsReminder] = useState(false)
   const [customer, setCustomer] = useState({
     firstName: '',
     lastName: '',
@@ -170,6 +172,8 @@ export function BookBusinessPage() {
         serviceId,
         startDatetime: selectedSlot,
         customerNotes: customerNotes || undefined,
+        emailReminder,
+        smsReminder,
       })
       setConfirmation(booking)
     } catch (err) {
@@ -476,6 +480,33 @@ export function BookBusinessPage() {
                       value={customerNotes}
                       onChange={(e) => setCustomerNotes(e.target.value)}
                     />
+                  </div>
+                  <div className="form-row">
+                    <label className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={emailReminder}
+                        onChange={(e) => setEmailReminder(e.target.checked)}
+                      />
+                      <span>
+                        Email me my booking details
+                        <span className="field-hint">
+                          {' '}
+                          (sent to the email address above)
+                        </span>
+                      </span>
+                    </label>
+                    <label className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={smsReminder}
+                        onChange={(e) => setSmsReminder(e.target.checked)}
+                      />
+                      <span>
+                        Send me an SMS reminder
+                        <span className="field-hint"> (coming soon)</span>
+                      </span>
+                    </label>
                   </div>
                 </section>
 

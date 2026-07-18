@@ -226,6 +226,8 @@ describe('BookBusinessPage', () => {
       serviceId: 's-1',
       startDatetime: slots[0].startDatetime,
       customerNotes: undefined,
+      emailReminder: true,
+      smsReminder: false,
     })
   })
 

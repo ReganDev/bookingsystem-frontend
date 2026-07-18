@@ -203,6 +203,8 @@ export interface PublicBookingRequest {
   serviceId: string
   startDatetime: string
   customerNotes?: string
+  emailReminder?: boolean
+  smsReminder?: boolean
 }
 
 export interface Page<T> {
