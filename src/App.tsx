@@ -4,6 +4,7 @@ import { AuthLayout, Layout } from './components/Layout'
 import { PublicLayout } from './components/PublicLayout'
 import { useAuth } from './context/AuthContext'
 import { resolveHashPath } from './lib/hashRedirect'
+import { AdminPage } from './pages/AdminPage'
 import { BookBusinessPage } from './pages/BookBusinessPage'
 import { BrowseBusinessesPage } from './pages/BrowseBusinessesPage'
 import { ContactPage } from './pages/ContactPage'
@@ -27,7 +28,7 @@ function HashSlugRedirect() {
 }
 
 function OwnerRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isCustomer, isLoading } = useAuth()
+  const { isAuthenticated, isCustomer, isAdmin, isLoading } = useAuth()
 
   if (isLoading) {
     return <div className="auth-page">Loading…</div>
@@ -40,6 +41,28 @@ function OwnerRoute({ children }: { children: React.ReactNode }) {
   // Customer accounts have no business to manage
   if (isCustomer) {
     return <Navigate to="/book" replace />
+  }
+
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />
+  }
+
+  return children
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isAdmin, isLoading } = useAuth()
+
+  if (isLoading) {
+    return <div className="auth-page">Loading…</div>
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />
   }
 
   return children
@@ -60,7 +83,7 @@ function GuestAuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 function HomeRedirect() {
-  const { isAuthenticated, isCustomer, isLoading } = useAuth()
+  const { isAuthenticated, isCustomer, isAdmin, isLoading } = useAuth()
 
   if (isLoading) {
     return <div className="auth-page">Loading…</div>
@@ -68,6 +91,10 @@ function HomeRedirect() {
 
   if (!isAuthenticated || isCustomer) {
     return <Navigate to="/book" replace />
+  }
+
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />
   }
 
   return <Navigate to="/dashboard" replace />
@@ -115,6 +142,15 @@ export default function App() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
       </Route>
+
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminPage />
+          </AdminRoute>
+        }
+      />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

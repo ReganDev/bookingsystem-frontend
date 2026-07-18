@@ -217,6 +217,17 @@ button {
   color: var(--color-fg-subtle);
 }
 
+.password-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.password-row input {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ---------- Buttons ---------- */
 
 .btn {

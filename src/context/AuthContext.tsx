@@ -27,6 +27,7 @@ type AuthContextValue = {
   accessToken: string | null
   isAuthenticated: boolean
   isCustomer: boolean
+  isAdmin: boolean
   isLoading: boolean
   login: (request: LoginRequest) => Promise<void>
   registerCustomer: (request: CustomerRegisterRequest) => Promise<void>
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accessToken: stored?.accessToken ?? null,
       isAuthenticated: Boolean(stored?.accessToken),
       isCustomer: stored?.user?.role === 'CUSTOMER',
+      isAdmin: stored?.user?.role === 'ADMIN',
       isLoading,
       login,
       registerCustomer,
