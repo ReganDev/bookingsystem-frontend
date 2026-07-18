@@ -15,15 +15,21 @@ import {
   saveAuth,
   type StoredAuth,
 } from '../lib/authStorage'
-import type { AuthResponse, LoginRequest } from '../types/api'
+import type {
+  AuthResponse,
+  CustomerRegisterRequest,
+  LoginRequest,
+} from '../types/api'
 
 type AuthContextValue = {
   user: AuthResponse['user'] | null
   business: AuthResponse['business'] | null
   accessToken: string | null
   isAuthenticated: boolean
+  isCustomer: boolean
   isLoading: boolean
   login: (request: LoginRequest) => Promise<void>
+  registerCustomer: (request: CustomerRegisterRequest) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -49,6 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStored(saveAuth(response))
   }, [])
 
+  const registerCustomer = useCallback(
+    async (request: CustomerRegisterRequest) => {
+      const response = await authApi.registerCustomer(request)
+      setStored(saveAuth(response))
+    },
+    [],
+  )
+
   const logout = useCallback(async () => {
     if (stored?.refreshToken) {
       try {
@@ -67,11 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       business: stored?.business ?? null,
       accessToken: stored?.accessToken ?? null,
       isAuthenticated: Boolean(stored?.accessToken),
+      isCustomer: stored?.user?.role === 'CUSTOMER',
       isLoading,
       login,
+      registerCustomer,
       logout,
     }),
-    [stored, isLoading, login, logout],
+    [stored, isLoading, login, registerCustomer, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

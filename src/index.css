@@ -551,6 +551,71 @@ button {
 
 /* ---------- Public booking pages ---------- */
 
+.browse-hero {
+  text-align: center;
+  padding: 2rem 1rem 1.75rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(160deg, var(--color-primary-soft), #ffffff 70%);
+  border: 1px solid #dbeafe;
+  border-radius: var(--radius-lg);
+}
+
+.browse-hero h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.6rem;
+}
+
+.browse-hero p {
+  margin: 0 auto 1.25rem;
+  color: var(--color-fg-muted);
+  max-width: 34rem;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 0.55rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  color: var(--color-fg-subtle);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-bar:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.search-bar svg {
+  flex: none;
+}
+
+.search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-fg);
+  min-width: 0;
+}
+
+.business-card-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
 .business-grid {
   display: grid;
   gap: 1rem;

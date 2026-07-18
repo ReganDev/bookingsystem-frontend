@@ -1,8 +1,9 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export function PublicLayout() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isCustomer, user, logout } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <div className="app-shell public-shell">
@@ -11,13 +12,33 @@ export function PublicLayout() {
           <h1>Book Now</h1>
         </Link>
         <div className="app-header-meta">
-          {isAuthenticated ? (
+          {!isAuthenticated && (
+            <>
+              <Link to="/login" className="header-link">
+                Sign in
+              </Link>
+              <Link to="/signup" className="btn btn-primary btn-sm">
+                Create account
+              </Link>
+            </>
+          )}
+          {isAuthenticated && isCustomer && (
+            <>
+              <span>Hi, {user?.firstName}</span>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={async () => {
+                  await logout()
+                  navigate('/book')
+                }}
+              >
+                Sign out
+              </button>
+            </>
+          )}
+          {isAuthenticated && !isCustomer && (
             <Link to="/dashboard" className="header-link">
               Business dashboard
-            </Link>
-          ) : (
-            <Link to="/login" className="header-link">
-              Business login
             </Link>
           )}
         </div>

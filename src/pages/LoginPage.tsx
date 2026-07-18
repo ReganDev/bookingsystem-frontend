@@ -18,7 +18,9 @@ export function LoginPage() {
 
     try {
       await login({ email, password })
-      navigate('/dashboard')
+      // HomeRedirect sends business users to the dashboard and customers
+      // to the booking pages
+      navigate('/')
     } catch (err) {
       let message = 'Unable to sign in. Please try again.'
       if (err instanceof ApiClientError) {
@@ -69,7 +71,10 @@ export function LoginPage() {
       </form>
 
       <p className="auth-footer">
-        Accounts are set up personally for each business.{' '}
+        New here? <Link to="/signup">Create a customer account</Link>
+      </p>
+      <p className="auth-footer">
+        Business accounts are set up personally.{' '}
         <Link to="/contact">Get in touch</Link> to request one.
       </p>
     </div>

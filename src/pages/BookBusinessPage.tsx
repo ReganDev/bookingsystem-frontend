@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiClientError, getApiErrorMessage } from '../api/client'
 import * as publicApi from '../api/public'
+import { useAuth } from '../context/AuthContext'
 import type { Booking, Business, Service, TimeSlot } from '../types/api'
 
 function formatPrice(price?: number, currency = 'GBP') {
@@ -32,6 +33,7 @@ function toDateInputValue(date: Date) {
 
 export function BookBusinessPage() {
   const { slug } = useParams<{ slug: string }>()
+  const { isCustomer, user } = useAuth()
   const [business, setBusiness] = useState<Business | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,6 +53,18 @@ export function BookBusinessPage() {
     email: '',
     phone: '',
   })
+
+  // Logged-in customers get their details filled in automatically
+  useEffect(() => {
+    if (isCustomer && user) {
+      setCustomer({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone ?? '',
+      })
+    }
+  }, [isCustomer, user])
 
   const loadBusiness = useCallback(async () => {
     if (!slug) return

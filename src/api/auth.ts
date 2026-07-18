@@ -1,8 +1,19 @@
 import { apiRequest } from './client'
-import type { AuthResponse, LoginRequest } from '../types/api'
+import type {
+  AuthResponse,
+  CustomerRegisterRequest,
+  LoginRequest,
+} from '../types/api'
 
 export function login(request: LoginRequest) {
   return apiRequest<AuthResponse>('/auth/login', {
+    method: 'POST',
+    body: request,
+  })
+}
+
+export function registerCustomer(request: CustomerRegisterRequest) {
+  return apiRequest<AuthResponse>('/auth/register-customer', {
     method: 'POST',
     body: request,
   })

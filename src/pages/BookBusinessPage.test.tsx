@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as publicApi from '../api/public'
+import { AuthProvider } from '../context/AuthContext'
 import type { Booking, Business, Service, TimeSlot } from '../types/api'
 import { BookBusinessPage } from './BookBusinessPage'
 
@@ -55,9 +56,11 @@ const slots: TimeSlot[] = [
 function renderPage() {
   return render(
     <MemoryRouter initialEntries={['/book/absolutelyfabuloushairandbeauty']}>
-      <Routes>
-        <Route path="/book/:slug" element={<BookBusinessPage />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/book/:slug" element={<BookBusinessPage />} />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>,
   )
 }

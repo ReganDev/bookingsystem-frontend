@@ -9,6 +9,7 @@ import { BrowseBusinessesPage } from './pages/BrowseBusinessesPage'
 import { ContactPage } from './pages/ContactPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
+import { SignUpPage } from './pages/SignUpPage'
 
 // Client sites send customers here as <host>/#<business-slug>; turn that
 // hash into the /book/:slug route on first load.
@@ -26,7 +27,7 @@ function HashSlugRedirect() {
 }
 
 function OwnerRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isCustomer, isLoading } = useAuth()
 
   if (isLoading) {
     return <div className="auth-page">Loading…</div>
@@ -34,6 +35,11 @@ function OwnerRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  // Customer accounts have no business to manage
+  if (isCustomer) {
+    return <Navigate to="/book" replace />
   }
 
   return children
@@ -47,20 +53,24 @@ function GuestAuthRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/" replace />
   }
 
   return children
 }
 
 function HomeRedirect() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isCustomer, isLoading } = useAuth()
 
   if (isLoading) {
     return <div className="auth-page">Loading…</div>
   }
 
-  return <Navigate to={isAuthenticated ? '/dashboard' : '/book'} replace />
+  if (!isAuthenticated || isCustomer) {
+    return <Navigate to="/book" replace />
+  }
+
+  return <Navigate to="/dashboard" replace />
 }
 
 export default function App() {
@@ -84,8 +94,16 @@ export default function App() {
             </GuestAuthRoute>
           }
         />
+        <Route
+          path="/signup"
+          element={
+            <GuestAuthRoute>
+              <SignUpPage />
+            </GuestAuthRoute>
+          }
+        />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/register" element={<Navigate to="/contact" replace />} />
+        <Route path="/register" element={<Navigate to="/signup" replace />} />
       </Route>
 
       <Route

@@ -5,11 +5,11 @@ export type BookingStatus =
   | 'COMPLETED'
   | 'NO_SHOW'
 
-export type UserRole = 'OWNER' | 'ADMIN' | 'STAFF'
+export type UserRole = 'OWNER' | 'ADMIN' | 'STAFF' | 'CUSTOMER'
 
 export interface User {
   id: string
-  businessId: string
+  businessId?: string
   email: string
   firstName: string
   lastName: string
@@ -90,12 +90,20 @@ export interface AuthResponse {
   tokenType: string
   expiresIn: number
   user: User
-  business: Business
+  business: Business | null
 }
 
 export interface LoginRequest {
   email: string
   password: string
+}
+
+export interface CustomerRegisterRequest {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  phone?: string
 }
 
 export interface RegisterRequest {
