@@ -154,7 +154,7 @@ describe('BookBusinessPage', () => {
     await user.click(firstSlot)
 
     expect(
-      screen.getByRole('button', { name: 'Request booking' }),
+      screen.getByRole('button', { name: 'Request appointment' }),
     ).toBeEnabled()
   })
 
@@ -212,9 +212,11 @@ describe('BookBusinessPage', () => {
     await user.type(screen.getByLabelText('First name'), 'Jane')
     await user.type(screen.getByLabelText('Last name'), 'Doe')
     await user.type(screen.getByLabelText('Email'), 'jane@example.com')
-    await user.click(screen.getByRole('button', { name: 'Request booking' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Request appointment' }),
+    )
 
-    await screen.findByText('Booking requested')
+    await screen.findByText('Thanks, Jane')
 
     expect(publicApi.createPublicBooking).toHaveBeenCalledWith('b-1', {
       customer: {

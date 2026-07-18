@@ -192,8 +192,8 @@ export function BookBusinessPage() {
 
   if (loading) {
     return (
-      <div className="panel">
-        <p>Loading…</p>
+      <div className="panel booking-panel" role="status">
+        <p className="slot-hint">Loading booking page…</p>
       </div>
     )
   }
@@ -212,9 +212,13 @@ export function BookBusinessPage() {
 
   if (confirmation) {
     return (
-      <div className="panel">
-        <div className="success-banner">
-          <h3>Booking requested</h3>
+      <div className="panel booking-panel booking-confirmation">
+        <div className="confirmation-mark" aria-hidden="true">
+          ✓
+        </div>
+        <div>
+          <p className="booking-eyebrow">Request sent</p>
+          <h2>Thanks, {confirmation.customer.firstName}</h2>
           <p>
             Your appointment with <strong>{business.name}</strong> for{' '}
             <strong>{confirmation.service.name}</strong> on{' '}
@@ -222,7 +226,7 @@ export function BookBusinessPage() {
             been sent.
           </p>
         </div>
-        <p className="panel-subtitle">
+        <p className="confirmation-note">
           {business.name} will confirm your appointment. You&apos;ll hear back
           at <strong>{confirmation.customer.email}</strong>. There&apos;s
           nothing else you need to do.
@@ -249,21 +253,34 @@ export function BookBusinessPage() {
   }
 
   return (
-    <div className="panel">
+    <div className="panel booking-panel">
       <Link to="/book" className="back-link">
         ← All businesses
       </Link>
 
-      <div className="panel-header">
+      <div className="booking-business-header">
+        <div className="booking-business-avatar" aria-hidden="true">
+          {business.name.charAt(0).toUpperCase()}
+        </div>
         <div>
-          <h3>{business.name}</h3>
+          <p className="booking-eyebrow">Book an appointment</p>
+          <h2>{business.name}</h2>
           {business.description && (
             <p className="panel-subtitle">{business.description}</p>
+          )}
+          {(business.city || business.country) && (
+            <p className="booking-location">
+              {[business.city, business.country].filter(Boolean).join(', ')}
+            </p>
           )}
         </div>
       </div>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}
+        </div>
+      )}
 
       {services.length === 0 ? (
         <div className="empty-state">
@@ -271,7 +288,7 @@ export function BookBusinessPage() {
         </div>
       ) : (
         <>
-          <ol className="wizard-progress">
+          <ol className="wizard-progress" aria-label="Booking progress">
             {([1, 2, 3, 4] as Step[]).map((n) => (
               <li
                 key={n}
@@ -305,6 +322,7 @@ export function BookBusinessPage() {
           </ol>
 
           <div className="wizard-step" key={step}>
+            <p className="wizard-step-count">Step {step} of 4</p>
             {step > 1 && (
               <button
                 type="button"
@@ -318,6 +336,9 @@ export function BookBusinessPage() {
             {step === 1 && (
               <section className="form-section">
                 <h4>Choose a service</h4>
+                <p className="wizard-step-intro">
+                  Select the appointment that works for you.
+                </p>
                 <div className="service-options">
                   {services.map((service) => (
                     <label
@@ -334,16 +355,18 @@ export function BookBusinessPage() {
                         onChange={() => pickService(service.id)}
                         onClick={() => pickService(service.id)}
                       />
-                      <div>
+                      <div className="service-option-content">
                         <div className="service-option-name">
                           {service.name}
                         </div>
                         <div className="service-option-meta">
-                          {service.durationMinutes} min ·{' '}
-                          {formatPrice(
+                          <span>{service.durationMinutes} min</span>
+                          <strong>
+                            {formatPrice(
                             service.price,
                             business.currency ?? 'GBP',
                           )}
+                          </strong>
                         </div>
                         {service.description && (
                           <div className="service-option-description">
@@ -360,6 +383,9 @@ export function BookBusinessPage() {
             {step === 2 && (
               <section className="form-section">
                 <h4>Pick a day</h4>
+                <p className="wizard-step-intro">
+                  Available dates are highlighted below.
+                </p>
                 <BookingCalendar
                   businessId={business.id}
                   serviceId={serviceId}
@@ -373,6 +399,9 @@ export function BookBusinessPage() {
             {step === 3 && (
               <section className="form-section">
                 <h4>Pick a time</h4>
+                <p className="wizard-step-intro">
+                  All times are shown in your local timezone.
+                </p>
                 <div className="form-row">
                   <span className="form-label">
                     Times for {formatDayHeading(selectedDate)}
@@ -416,39 +445,44 @@ export function BookBusinessPage() {
                       anything that&apos;s not right.
                     </p>
                   )}
-                  <div className="form-row">
-                    <label htmlFor="firstName">First name</label>
-                    <input
-                      id="firstName"
-                      value={customer.firstName}
-                      onChange={(e) =>
-                        setCustomer((current) => ({
-                          ...current,
-                          firstName: e.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="form-row">
-                    <label htmlFor="lastName">Last name</label>
-                    <input
-                      id="lastName"
-                      value={customer.lastName}
-                      onChange={(e) =>
-                        setCustomer((current) => ({
-                          ...current,
-                          lastName: e.target.value,
-                        }))
-                      }
-                      required
-                    />
+                  <div className="booking-name-fields">
+                    <div className="form-row">
+                      <label htmlFor="firstName">First name</label>
+                      <input
+                        id="firstName"
+                        autoComplete="given-name"
+                        value={customer.firstName}
+                        onChange={(e) =>
+                          setCustomer((current) => ({
+                            ...current,
+                            firstName: e.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="lastName">Last name</label>
+                      <input
+                        id="lastName"
+                        autoComplete="family-name"
+                        value={customer.lastName}
+                        onChange={(e) =>
+                          setCustomer((current) => ({
+                            ...current,
+                            lastName: e.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="form-row">
                     <label htmlFor="email">Email</label>
                     <input
                       id="email"
                       type="email"
+                      autoComplete="email"
                       value={customer.email}
                       onChange={(e) =>
                         setCustomer((current) => ({
@@ -463,6 +497,8 @@ export function BookBusinessPage() {
                     <label htmlFor="phone">Phone (optional)</label>
                     <input
                       id="phone"
+                      type="tel"
+                      autoComplete="tel"
                       value={customer.phone}
                       onChange={(e) =>
                         setCustomer((current) => ({
@@ -501,6 +537,7 @@ export function BookBusinessPage() {
                         type="checkbox"
                         checked={smsReminder}
                         onChange={(e) => setSmsReminder(e.target.checked)}
+                        disabled
                       />
                       <span>
                         Send me an SMS reminder
@@ -512,13 +549,19 @@ export function BookBusinessPage() {
 
                 {selectedService && selectedSlot && (
                   <div className="booking-summary">
-                    <strong>{selectedService.name}</strong> ·{' '}
-                    {formatDayHeading(selectedDate)} at{' '}
-                    {formatTime(selectedSlot)} ·{' '}
-                    {formatPrice(
-                      selectedService.price,
-                      business.currency ?? 'GBP',
-                    )}
+                    <p className="booking-summary-label">Your appointment</p>
+                    <strong>{selectedService.name}</strong>
+                    <span>
+                      {formatDayHeading(selectedDate)} at{' '}
+                      {formatTime(selectedSlot)}
+                    </span>
+                    <span>
+                      {selectedService.durationMinutes} min ·{' '}
+                      {formatPrice(
+                        selectedService.price,
+                        business.currency ?? 'GBP',
+                      )}
+                    </span>
                   </div>
                 )}
 
@@ -527,7 +570,7 @@ export function BookBusinessPage() {
                   type="submit"
                   disabled={submitting || !selectedSlot}
                 >
-                  {submitting ? 'Submitting…' : 'Request booking'}
+                  {submitting ? 'Sending request…' : 'Request appointment'}
                 </button>
               </form>
             )}

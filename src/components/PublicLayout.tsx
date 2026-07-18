@@ -8,8 +8,11 @@ export function PublicLayout() {
   return (
     <div className="app-shell public-shell">
       <header className="app-header public-header">
-        <Link to="/book" className="brand-link">
-          <h1>Book Now</h1>
+        <Link to="/book" className="brand-link" aria-label="BookingBase home">
+          <span className="brand-mark" aria-hidden="true">
+            B
+          </span>
+          <span className="brand-name">bookingbase</span>
         </Link>
         <div className="app-header-meta">
           {!isAuthenticated && (

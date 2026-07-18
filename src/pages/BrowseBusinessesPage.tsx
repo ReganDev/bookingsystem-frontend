@@ -45,14 +45,15 @@ export function BrowseBusinessesPage() {
   return (
     <>
       <section className="browse-hero">
+        <p className="browse-eyebrow">Simple online booking</p>
         <h2>
           {isCustomer && user
             ? `Welcome back, ${user.firstName}!`
             : 'Book your next appointment'}
         </h2>
         <p>
-          Find a business below and book in a few clicks. No phone calls
-          needed.
+          Find a local business, choose a time and send your request in just a
+          few clicks.
         </p>
         <div className="search-bar">
           <svg
@@ -75,13 +76,34 @@ export function BrowseBusinessesPage() {
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search businesses"
           />
+          {query && (
+            <button
+              type="button"
+              className="search-clear"
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <div className="browse-benefits" aria-label="Booking benefits">
+          <span>Free to book</span>
+          <span>Book anytime</span>
+          <span>No phone call needed</span>
         </div>
       </section>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}
+        </div>
+      )}
 
       {loading ? (
-        <p className="slot-hint">Loading businesses…</p>
+        <p className="slot-hint" role="status">
+          Loading businesses…
+        </p>
       ) : filtered.length === 0 ? (
         <div className="empty-state">
           <strong>
@@ -92,32 +114,51 @@ export function BrowseBusinessesPage() {
               ? 'Try a different name or location, or clear the search to see everything.'
               : 'Please check back soon.'}
           </p>
+          {query && (
+            <button
+              type="button"
+              className="btn btn-secondary empty-state-action"
+              onClick={() => setQuery('')}
+            >
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
-        <div className="business-grid">
-          {filtered.map((business) => (
-            <Link
-              key={business.id}
-              to={`/book/${business.slug}`}
-              className="business-card"
-            >
-              <div className="business-card-avatar" aria-hidden="true">
-                {business.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="business-card-name">{business.name}</div>
-              {business.description && (
-                <p className="business-card-description">
-                  {business.description}
-                </p>
-              )}
-              <div className="business-card-meta">
-                {[business.city, business.country].filter(Boolean).join(', ') ||
-                  'View services and book'}
-              </div>
-              <span className="business-card-cta">Book appointment →</span>
-            </Link>
-          ))}
-        </div>
+        <section aria-labelledby="business-results-heading">
+          <div className="business-results-header">
+            <h3 id="business-results-heading">
+              {query ? 'Search results' : 'Available businesses'}
+            </h3>
+            <span>
+              {filtered.length} {filtered.length === 1 ? 'business' : 'businesses'}
+            </span>
+          </div>
+          <div className="business-grid">
+            {filtered.map((business) => (
+              <Link
+                key={business.id}
+                to={`/book/${business.slug}`}
+                className="business-card"
+              >
+                <div className="business-card-avatar" aria-hidden="true">
+                  {business.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="business-card-name">{business.name}</div>
+                {business.description && (
+                  <p className="business-card-description">
+                    {business.description}
+                  </p>
+                )}
+                <div className="business-card-meta">
+                  {[business.city, business.country].filter(Boolean).join(', ') ||
+                    'View services and book'}
+                </div>
+                <span className="business-card-cta">View availability →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
     </>
   )
