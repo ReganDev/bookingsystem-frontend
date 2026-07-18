@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export function PublicLayout() {
-  const { isAuthenticated, isCustomer, user, logout } = useAuth()
+  const { isAuthenticated, isCustomer, isAdmin, user, logout } = useAuth()
   const navigate = useNavigate()
 
   return (
@@ -37,8 +37,11 @@ export function PublicLayout() {
             </>
           )}
           {isAuthenticated && !isCustomer && (
-            <Link to="/dashboard" className="header-link">
-              Business dashboard
+            <Link
+              to={isAdmin ? '/admin' : '/dashboard'}
+              className="header-link"
+            >
+              {isAdmin ? 'Admin console' : 'Business dashboard'}
             </Link>
           )}
         </div>
