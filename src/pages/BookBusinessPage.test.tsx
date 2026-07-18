@@ -137,12 +137,14 @@ describe('BookBusinessPage', () => {
     expect(slotButtons).toHaveLength(2)
   })
 
-  it('keeps the submit button disabled until a slot is selected', async () => {
+  it('only offers the submit button once a slot is selected', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await screen.findByText('Haircut')
-    expect(screen.getByRole('button', { name: 'Request booking' })).toBeDisabled()
+    expect(
+      screen.queryByRole('button', { name: 'Request booking' }),
+    ).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('radio'))
     await chooseDay(user, slotNine)
@@ -154,6 +156,30 @@ describe('BookBusinessPage', () => {
     expect(
       screen.getByRole('button', { name: 'Request booking' }),
     ).toBeEnabled()
+  })
+
+  it('lets the customer go back a step', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('Haircut')
+    await user.click(screen.getByRole('radio'))
+    await chooseDay(user, slotNine)
+
+    // now on the time step
+    await screen.findAllByRole('button', { name: /\d{1,2}:\d{2}/ })
+
+    await user.click(screen.getByRole('button', { name: '← Back' }))
+
+    // back on the day step: the calendar month navigation is visible again
+    expect(
+      screen.getByRole('button', { name: 'Next month' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '← Back' }))
+
+    // back on the service step
+    expect(screen.getByRole('radio')).toBeInTheDocument()
   })
 
   it('submits a booking for the selected slot', async () => {
@@ -217,7 +243,7 @@ describe('BookBusinessPage', () => {
       await screen.findByText(/No available times on this date/),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Request booking' }),
-    ).toBeDisabled()
+      screen.queryByRole('button', { name: 'Request booking' }),
+    ).not.toBeInTheDocument()
   })
 })

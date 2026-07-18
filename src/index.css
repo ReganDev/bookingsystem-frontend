@@ -769,6 +769,110 @@ button {
   font-size: 0.9rem;
 }
 
+/* Booking wizard */
+
+.wizard-progress {
+  display: flex;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.wizard-progress-step {
+  flex: 1;
+  min-width: 5.5rem;
+}
+
+.wizard-progress-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-top: 3px solid var(--color-border);
+  padding: 0.6rem 0.25rem 0;
+  text-align: left;
+  color: var(--color-fg-subtle);
+  cursor: default;
+}
+
+.wizard-progress-step.done .wizard-progress-button {
+  border-top-color: var(--color-accent);
+  color: var(--color-fg);
+  cursor: pointer;
+}
+
+.wizard-progress-step.current .wizard-progress-button {
+  border-top-color: var(--color-primary);
+  color: var(--color-fg);
+}
+
+.wizard-progress-marker {
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border-strong);
+}
+
+.wizard-progress-step.done .wizard-progress-marker {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.wizard-progress-step.current .wizard-progress-marker {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.wizard-progress-text {
+  display: grid;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.wizard-progress-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.wizard-progress-value {
+  font-size: 0.72rem;
+  color: var(--color-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wizard-step {
+  animation: wizard-step-in 0.25s ease;
+}
+
+.wizard-back {
+  margin-bottom: 1rem;
+}
+
+@keyframes wizard-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Customer-facing availability calendar */
 
 .booking-calendar {
