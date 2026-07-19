@@ -6,10 +6,17 @@ import * as schedulesApi from '../api/schedules'
 import * as servicesApi from '../api/services'
 import { CalendarPanel } from '../components/CalendarPanel'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
+import { PhotosPanel } from '../components/PhotosPanel'
 import { useAuth } from '../context/AuthContext'
 import type { Booking, BookingStatus, Service } from '../types/api'
 
-type Tab = 'bookings' | 'calendar' | 'services' | 'opening-hours' | 'new-booking'
+type Tab =
+  | 'bookings'
+  | 'calendar'
+  | 'services'
+  | 'opening-hours'
+  | 'new-booking'
+  | 'photos'
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   bookings:
@@ -22,6 +29,8 @@ const TAB_DESCRIPTIONS: Record<Tab, string> = {
     'The days and times you accept bookings. Customers can only pick slots inside these hours.',
   'new-booking':
     'Add a booking yourself, useful for phone or walk-in customers.',
+  photos:
+    'Photos shown next to your booking form. Add image links to show off your business.',
 }
 
 function formatDateTime(value: string) {
@@ -185,6 +194,12 @@ export function DashboardPage() {
         >
           New booking
         </button>
+        <button
+          className={`tab ${tab === 'photos' ? 'active' : ''}`}
+          onClick={() => setTab('photos')}
+        >
+          Photos
+        </button>
       </div>
 
       <p className="tab-description">{TAB_DESCRIPTIONS[tab]}</p>
@@ -233,6 +248,9 @@ export function DashboardPage() {
                 setTab('bookings')
               }}
             />
+          )}
+          {tab === 'photos' && (
+            <PhotosPanel businessId={businessId!} token={token!} />
           )}
         </>
       )}

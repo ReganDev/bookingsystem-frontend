@@ -35,6 +35,7 @@ export interface Business {
   timezone?: string
   currency?: string
   logoUrl?: string
+  photoUrls?: string[]
   bookingAdvanceDays?: number
   bookingNoticeHours?: number
   cancellationNoticeHours?: number

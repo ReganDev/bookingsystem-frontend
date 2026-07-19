@@ -803,6 +803,21 @@ button {
   font-size: 0.9rem;
 }
 
+.booking-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.booking-layout.no-photos {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+
 .booking-panel {
   width: 100%;
   max-width: 760px;
@@ -810,6 +825,125 @@ button {
   padding: clamp(1.25rem, 4vw, 2.25rem);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
+}
+
+.booking-layout .booking-panel {
+  max-width: none;
+  margin: 0;
+}
+
+/* Owner photo editor */
+
+.photo-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.85rem;
+}
+
+.photo-editor-item {
+  position: relative;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.photo-editor-item > img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-primary-soft);
+}
+
+.photo-editor-badge {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+}
+
+.photo-editor-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.photo-editor-actions .btn {
+  flex: none;
+}
+
+.photo-editor-actions .btn-danger {
+  margin-left: auto;
+}
+
+.photo-add-form {
+  margin-top: 1.25rem;
+}
+
+/* Business photo gallery */
+
+.booking-gallery {
+  position: sticky;
+  top: 5rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.booking-gallery-main {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-muted, var(--color-primary-soft));
+  box-shadow: var(--shadow-md);
+}
+
+.booking-gallery-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.booking-gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr));
+  gap: 0.5rem;
+}
+
+.booking-gallery-thumb {
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.booking-gallery-thumb.active {
+  border-color: var(--color-primary);
+}
+
+.booking-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 800px) {
+  .booking-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-gallery {
+    position: static;
+  }
 }
 
 .booking-business-header {

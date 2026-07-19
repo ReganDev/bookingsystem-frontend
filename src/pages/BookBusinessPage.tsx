@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ApiClientError, getApiErrorMessage } from '../api/client'
 import * as publicApi from '../api/public'
 import { BookingCalendar } from '../components/BookingCalendar'
+import { BusinessGallery } from '../components/BusinessGallery'
 import { useAuth } from '../context/AuthContext'
 import type { Booking, Business, Service, TimeSlot } from '../types/api'
 
@@ -252,11 +253,16 @@ export function BookBusinessPage() {
     4: null,
   }
 
+  const photos = business.photoUrls ?? []
+
   return (
-    <div className="panel booking-panel">
-      <Link to="/book" className="back-link">
-        ← All businesses
-      </Link>
+    <div className={`booking-layout ${photos.length > 0 ? '' : 'no-photos'}`}>
+      <BusinessGallery photos={photos} businessName={business.name} />
+
+      <div className="panel booking-panel">
+        <Link to="/book" className="back-link">
+          ← All businesses
+        </Link>
 
       <div className="booking-business-header">
         <div className="booking-business-avatar" aria-hidden="true">
@@ -574,9 +580,10 @@ export function BookBusinessPage() {
                 </button>
               </form>
             )}
-          </div>
-        </>
-      )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
