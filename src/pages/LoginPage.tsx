@@ -121,6 +121,9 @@ export function LoginPage() {
       </form>
 
       <p className="auth-footer">
+        <Link to="/forgot-password">Forgot your password?</Link>
+      </p>
+      <p className="auth-footer">
         New here?{' '}
         <Link to={withReturnTo('/signup', returnTo)}>
           Create a customer account

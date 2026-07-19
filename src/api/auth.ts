@@ -34,6 +34,20 @@ export function resendVerification(email: string) {
   })
 }
 
+export function forgotPassword(email: string) {
+  return apiRequest<MessageResponse>('/auth/forgot-password', {
+    method: 'POST',
+    body: { email },
+  })
+}
+
+export function resetPassword(token: string, newPassword: string) {
+  return apiRequest<MessageResponse>('/auth/reset-password', {
+    method: 'POST',
+    body: { token, newPassword },
+  })
+}
+
 export function refreshToken(refreshToken: string) {
   return apiRequest<AuthResponse>('/auth/refresh', {
     method: 'POST',

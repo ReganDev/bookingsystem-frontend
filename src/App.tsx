@@ -12,6 +12,8 @@ import { ContactPage } from './pages/ContactPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { CheckEmailPage } from './pages/CheckEmailPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 
@@ -177,6 +179,8 @@ export default function App() {
         />
         <Route path="/check-email" element={<CheckEmailPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/register" element={<Navigate to="/signup" replace />} />
       </Route>
