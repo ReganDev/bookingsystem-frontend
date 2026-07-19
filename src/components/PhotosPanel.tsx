@@ -16,6 +16,16 @@ const MAX_IMAGE_EDGE = 4032
 const MAX_IMAGE_PIXELS = 4032 * 3024
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
+function getPhotoError(err: unknown, fallback: string) {
+  if (!(err instanceof ApiClientError)) {
+    return fallback
+  }
+  if (err.status >= 500 || err.body.code === 'PHOTO_STORAGE_UNAVAILABLE') {
+    return fallback
+  }
+  return err.message
+}
+
 async function readImageDimensions(file: File) {
   if ('createImageBitmap' in window) {
     const bitmap = await createImageBitmap(file)
@@ -67,7 +77,10 @@ export function PhotosPanel({
       setPhotos(data.photoUrls ?? [])
     } catch (err) {
       setError(
-        err instanceof ApiClientError ? err.message : 'Failed to load photos.',
+        getPhotoError(
+          err,
+          "We couldn't load your photos right now. Please try again shortly.",
+        ),
       )
     } finally {
       setLoading(false)
@@ -141,7 +154,10 @@ export function PhotosPanel({
       setSaved(true)
     } catch (err) {
       setError(
-        err instanceof ApiClientError ? err.message : 'Failed to upload photos.',
+        getPhotoError(
+          err,
+          "We couldn't upload your photos right now. Please try again in a few minutes.",
+        ),
       )
     } finally {
       setUploading(false)
@@ -178,7 +194,10 @@ export function PhotosPanel({
       setSaved(true)
     } catch (err) {
       setError(
-        err instanceof ApiClientError ? err.message : 'Failed to remove photo.',
+        getPhotoError(
+          err,
+          "We couldn't remove that photo right now. Please try again in a few minutes.",
+        ),
       )
     } finally {
       setDeletingUrl(null)
@@ -211,7 +230,10 @@ export function PhotosPanel({
       setSaved(true)
     } catch (err) {
       setError(
-        err instanceof ApiClientError ? err.message : 'Failed to save photos.',
+        getPhotoError(
+          err,
+          "We couldn't save your photo order right now. Please try again shortly.",
+        ),
       )
     } finally {
       setSaving(false)

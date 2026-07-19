@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as businessesApi from '../api/businesses'
+import { ApiClientError } from '../api/client'
 import type { Business } from '../types/api'
 import { PhotosPanel } from './PhotosPanel'
 
@@ -106,5 +107,30 @@ describe('PhotosPanel', () => {
       await screen.findByText(/“too-wide.jpg” is 4033×3024px/),
     ).toBeInTheDocument()
     expect(businessesApi.uploadBusinessPhotos).not.toHaveBeenCalled()
+  })
+
+  it('hides technical storage errors from business users', async () => {
+    vi.mocked(businessesApi.uploadBusinessPhotos).mockRejectedValue(
+      new ApiClientError(503, {
+        code: 'PHOTO_STORAGE_UNAVAILABLE',
+        message:
+          'Supabase rejected the photo upload. Check the bucket and backend credentials.',
+      }),
+    )
+    const user = userEvent.setup()
+    render(<PhotosPanel businessId="business-1" token="token" />)
+    const input = await screen.findByLabelText('Choose business photos')
+
+    await user.upload(
+      input,
+      new File(['image bytes'], 'salon.jpg', { type: 'image/jpeg' }),
+    )
+
+    expect(
+      await screen.findByText(
+        "We couldn't upload your photos right now. Please try again in a few minutes.",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Supabase/i)).not.toBeInTheDocument()
   })
 })
