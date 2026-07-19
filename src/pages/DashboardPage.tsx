@@ -30,7 +30,7 @@ const TAB_DESCRIPTIONS: Record<Tab, string> = {
   'new-booking':
     'Add a booking yourself, useful for phone or walk-in customers.',
   photos:
-    'Photos shown next to your booking form. Add image links to show off your business.',
+    'Photos shown next to your booking form. Upload images to show off your business.',
 }
 
 function formatDateTime(value: string) {

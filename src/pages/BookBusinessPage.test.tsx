@@ -53,7 +53,27 @@ const slots: TimeSlot[] = [
   },
 ]
 
-function renderPage() {
+function renderPage(authenticated = false) {
+  if (authenticated) {
+    localStorage.setItem(
+      'booking-auth',
+      JSON.stringify({
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        business: null,
+        user: {
+          id: 'u-1',
+          email: 'jane@example.com',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          fullName: 'Jane Doe',
+          role: 'CUSTOMER',
+          isActive: true,
+          emailVerified: true,
+        },
+      }),
+    )
+  }
   return render(
     <MemoryRouter initialEntries={['/book/absolutelyfabuloushairandbeauty']}>
       <AuthProvider>
@@ -67,6 +87,8 @@ function renderPage() {
 
 beforeEach(() => {
   vi.resetAllMocks()
+  localStorage.clear()
+  sessionStorage.clear()
   vi.mocked(publicApi.getBusinessBySlug).mockResolvedValue(business)
   vi.mocked(publicApi.getActiveServices).mockResolvedValue([haircut])
   vi.mocked(publicApi.getAvailability).mockResolvedValue(slots)
@@ -139,7 +161,7 @@ describe('BookBusinessPage', () => {
 
   it('only offers the submit button once a slot is selected', async () => {
     const user = userEvent.setup()
-    renderPage()
+    renderPage(true)
 
     await screen.findByText('Haircut')
     expect(
@@ -199,7 +221,7 @@ describe('BookBusinessPage', () => {
     } as Booking)
 
     const user = userEvent.setup()
-    renderPage()
+    renderPage(true)
 
     await screen.findByText('Haircut')
     await user.click(screen.getByRole('radio'))
@@ -209,9 +231,8 @@ describe('BookBusinessPage', () => {
     })
     await user.click(firstSlot)
 
-    await user.type(screen.getByLabelText('First name'), 'Jane')
-    await user.type(screen.getByLabelText('Last name'), 'Doe')
-    await user.type(screen.getByLabelText('Email'), 'jane@example.com')
+    expect(screen.getByLabelText('Email')).toHaveValue('jane@example.com')
+    expect(screen.getByLabelText('Email')).toHaveAttribute('readonly')
     await user.click(
       screen.getByRole('button', { name: 'Request appointment' }),
     )
@@ -230,7 +251,59 @@ describe('BookBusinessPage', () => {
       customerNotes: undefined,
       emailReminder: true,
       smsReminder: false,
+    }, 'access-token')
+  })
+
+  it('requires an account before an anonymous customer can submit', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('Haircut')
+    await user.click(screen.getByRole('radio'))
+    await chooseDay(user, slotNine)
+    const [firstSlot] = await screen.findAllByRole('button', {
+      name: /\d{1,2}:\d{2}/,
     })
+    await user.click(firstSlot)
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'Sign in to complete your booking',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Request appointment' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('restores an unfinished booking after authentication navigation', async () => {
+    const user = userEvent.setup()
+    const firstRender = renderPage()
+
+    await screen.findByText('Haircut')
+    await user.click(screen.getByRole('radio'))
+    await chooseDay(user, slotNine)
+    const [firstSlot] = await screen.findAllByRole('button', {
+      name: /\d{1,2}:\d{2}/,
+    })
+    await user.click(firstSlot)
+
+    await waitFor(() =>
+      expect(
+        sessionStorage.getItem(
+          'booking-draft:absolutelyfabuloushairandbeauty',
+        ),
+      ).toContain(slots[0].startDatetime),
+    )
+    firstRender.unmount()
+
+    renderPage()
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Sign in to complete your booking',
+      }),
+    ).toBeInTheDocument()
   })
 
   it('shows a message when no slots are available', async () => {

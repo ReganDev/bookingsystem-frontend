@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { AuthLayout, Layout } from './components/Layout'
+import { NetworkStatus } from './components/NetworkStatus'
 import { PublicLayout } from './components/PublicLayout'
 import { useAuth } from './context/AuthContext'
 import { resolveHashPath } from './lib/hashRedirect'
@@ -10,7 +11,9 @@ import { BrowseBusinessesPage } from './pages/BrowseBusinessesPage'
 import { ContactPage } from './pages/ContactPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
+import { CheckEmailPage } from './pages/CheckEmailPage'
 import { SignUpPage } from './pages/SignUpPage'
+import { VerifyEmailPage } from './pages/VerifyEmailPage'
 
 // Client sites send customers here as <host>/#<business-slug>; turn that
 // hash into the /book/:slug route on first load.
@@ -28,7 +31,8 @@ function HashSlugRedirect() {
 }
 
 function OwnerRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isCustomer, isAdmin, isLoading } = useAuth()
+  const { isAuthenticated, isCustomer, isAdmin, isVerified, user, isLoading } =
+    useAuth()
 
   if (isLoading) {
     return <div className="auth-page">Loading…</div>
@@ -36,6 +40,15 @@ function OwnerRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  if (!isVerified) {
+    return (
+      <Navigate
+        to={`/check-email?email=${encodeURIComponent(user?.email ?? '')}`}
+        replace
+      />
+    )
   }
 
   // Customer accounts have no business to manage
@@ -68,14 +81,31 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return children
 }
 
-function GuestAuthRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+function GuestAuthRoute({
+  children,
+  allowUnverified = false,
+}: {
+  children: React.ReactNode
+  allowUnverified?: boolean
+}) {
+  const { isAuthenticated, isVerified, user, isLoading } = useAuth()
 
   if (isLoading) {
     return <div className="auth-page">Loading…</div>
   }
 
   if (isAuthenticated) {
+    if (!isVerified) {
+      if (allowUnverified) {
+        return children
+      }
+      return (
+        <Navigate
+          to={`/check-email?email=${encodeURIComponent(user?.email ?? '')}`}
+          replace
+        />
+      )
+    }
     return <Navigate to="/" replace />
   }
 
@@ -83,13 +113,28 @@ function GuestAuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 function HomeRedirect() {
-  const { isAuthenticated, isCustomer, isAdmin, isLoading } = useAuth()
+  const {
+    isAuthenticated,
+    isCustomer,
+    isAdmin,
+    isVerified,
+    user,
+    isLoading,
+  } = useAuth()
 
   if (isLoading) {
     return <div className="auth-page">Loading…</div>
   }
 
   if (!isAuthenticated || isCustomer) {
+    if (isAuthenticated && !isVerified) {
+      return (
+        <Navigate
+          to={`/check-email?email=${encodeURIComponent(user?.email ?? '')}`}
+          replace
+        />
+      )
+    }
     return <Navigate to="/book" replace />
   }
 
@@ -103,6 +148,7 @@ function HomeRedirect() {
 export default function App() {
   return (
     <>
+      <NetworkStatus />
       <HashSlugRedirect />
       <Routes>
       <Route path="/" element={<HomeRedirect />} />
@@ -116,7 +162,7 @@ export default function App() {
         <Route
           path="/login"
           element={
-            <GuestAuthRoute>
+            <GuestAuthRoute allowUnverified>
               <LoginPage />
             </GuestAuthRoute>
           }
@@ -129,6 +175,8 @@ export default function App() {
             </GuestAuthRoute>
           }
         />
+        <Route path="/check-email" element={<CheckEmailPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/register" element={<Navigate to="/signup" replace />} />
       </Route>

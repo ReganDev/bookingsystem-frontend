@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type FormEvent,
+} from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiClientError, getApiErrorMessage } from '../api/client'
 import * as publicApi from '../api/public'
 import { BookingCalendar } from '../components/BookingCalendar'
 import { BusinessGallery } from '../components/BusinessGallery'
 import { useAuth } from '../context/AuthContext'
+import { withReturnTo } from '../lib/navigation'
 import type { Booking, Business, Service, TimeSlot } from '../types/api'
 
 function formatPrice(price?: number, currency = 'GBP') {
@@ -36,6 +42,18 @@ function formatDayHeading(isoDate: string) {
 
 type Step = 1 | 2 | 3 | 4
 
+type BookingDraft = {
+  step: Step
+  serviceId: string
+  selectedDate: string
+  selectedSlot: string
+  customerNotes: string
+  emailReminder: boolean
+  smsReminder: boolean
+}
+
+const DRAFT_PREFIX = 'booking-draft:'
+
 const STEP_LABELS: Record<Step, string> = {
   1: 'Service',
   2: 'Day',
@@ -45,7 +63,14 @@ const STEP_LABELS: Record<Step, string> = {
 
 export function BookBusinessPage() {
   const { slug } = useParams<{ slug: string }>()
-  const { isCustomer, user } = useAuth()
+  const {
+    isAuthenticated,
+    isCustomer,
+    isVerified,
+    accessToken,
+    user,
+    logout,
+  } = useAuth()
   const [business, setBusiness] = useState<Business | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,6 +87,7 @@ export function BookBusinessPage() {
   const [customerNotes, setCustomerNotes] = useState('')
   const [emailReminder, setEmailReminder] = useState(true)
   const [smsReminder, setSmsReminder] = useState(false)
+  const [draftLoaded, setDraftLoaded] = useState(false)
   const [customer, setCustomer] = useState({
     firstName: '',
     lastName: '',
@@ -80,6 +106,52 @@ export function BookBusinessPage() {
       })
     }
   }, [isCustomer, user])
+
+  useEffect(() => {
+    if (!slug) return
+    try {
+      const raw = sessionStorage.getItem(`${DRAFT_PREFIX}${slug}`)
+      if (raw) {
+        const draft = JSON.parse(raw) as BookingDraft
+        setStep(draft.step)
+        setServiceId(draft.serviceId)
+        setSelectedDate(draft.selectedDate)
+        setSelectedSlot(draft.selectedSlot)
+        setCustomerNotes(draft.customerNotes)
+        setEmailReminder(draft.emailReminder)
+        setSmsReminder(draft.smsReminder)
+      }
+    } catch {
+      sessionStorage.removeItem(`${DRAFT_PREFIX}${slug}`)
+    } finally {
+      setDraftLoaded(true)
+    }
+  }, [slug])
+
+  useEffect(() => {
+    if (!slug || !draftLoaded || confirmation) return
+    const draft: BookingDraft = {
+      step,
+      serviceId,
+      selectedDate,
+      selectedSlot,
+      customerNotes,
+      emailReminder,
+      smsReminder,
+    }
+    sessionStorage.setItem(`${DRAFT_PREFIX}${slug}`, JSON.stringify(draft))
+  }, [
+    slug,
+    draftLoaded,
+    confirmation,
+    step,
+    serviceId,
+    selectedDate,
+    selectedSlot,
+    customerNotes,
+    emailReminder,
+    smsReminder,
+  ])
 
   const loadBusiness = useCallback(async () => {
     if (!slug) return
@@ -159,23 +231,38 @@ export function BookBusinessPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    if (!business || !selectedSlot) return
+    if (
+      !business ||
+      !selectedSlot ||
+      !isCustomer ||
+      !isVerified ||
+      !accessToken
+    ) {
+      return
+    }
 
     setSubmitting(true)
     setError(null)
 
     try {
-      const booking = await publicApi.createPublicBooking(business.id, {
-        customer: {
-          ...customer,
-          phone: customer.phone || undefined,
+      const booking = await publicApi.createPublicBooking(
+        business.id,
+        {
+          customer: {
+            ...customer,
+            phone: customer.phone || undefined,
+          },
+          serviceId,
+          startDatetime: selectedSlot,
+          customerNotes: customerNotes || undefined,
+          emailReminder,
+          smsReminder,
         },
-        serviceId,
-        startDatetime: selectedSlot,
-        customerNotes: customerNotes || undefined,
-        emailReminder,
-        smsReminder,
-      })
+        accessToken,
+      )
+      if (slug) {
+        sessionStorage.removeItem(`${DRAFT_PREFIX}${slug}`)
+      }
       setConfirmation(booking)
     } catch (err) {
       const message =
@@ -442,15 +529,55 @@ export function BookBusinessPage() {
             )}
 
             {step === 4 && (
+              !isCustomer || !isVerified ? (
+                <section className="auth-gate">
+                  <h4>Sign in to complete your booking</h4>
+                  <p>
+                    A verified customer account is required so the business
+                    knows who made the appointment.
+                  </p>
+                  {!isAuthenticated && (
+                    <div className="actions-row">
+                      <Link
+                        className="btn btn-primary"
+                        to={withReturnTo('/login', `/book/${slug}`)}
+                      >
+                        Sign in
+                      </Link>
+                      <Link
+                        className="btn btn-secondary"
+                        to={withReturnTo('/signup', `/book/${slug}`)}
+                      >
+                        Create account
+                      </Link>
+                    </div>
+                  )}
+                  {isAuthenticated && isCustomer && !isVerified && (
+                    <Link
+                      className="btn btn-primary"
+                      to={`/check-email?email=${encodeURIComponent(user?.email ?? '')}&returnTo=${encodeURIComponent(`/book/${slug}`)}`}
+                    >
+                      Verify your email
+                    </Link>
+                  )}
+                  {isAuthenticated && !isCustomer && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => void logout()}
+                    >
+                      Sign out and use a customer account
+                    </button>
+                  )}
+                </section>
+              ) : (
               <form className="form-grid booking-form" onSubmit={handleSubmit}>
                 <section className="form-section">
                   <h4>Your details</h4>
-                  {isCustomer && (
-                    <p className="slot-hint">
-                      We&apos;ve filled these in from your account. Change
-                      anything that&apos;s not right.
-                    </p>
-                  )}
+                  <p className="slot-hint">
+                    Your verified account details will be used for this
+                    booking.
+                  </p>
                   <div className="booking-name-fields">
                     <div className="form-row">
                       <label htmlFor="firstName">First name</label>
@@ -458,12 +585,7 @@ export function BookBusinessPage() {
                         id="firstName"
                         autoComplete="given-name"
                         value={customer.firstName}
-                        onChange={(e) =>
-                          setCustomer((current) => ({
-                            ...current,
-                            firstName: e.target.value,
-                          }))
-                        }
+                        readOnly
                         required
                       />
                     </div>
@@ -473,12 +595,7 @@ export function BookBusinessPage() {
                         id="lastName"
                         autoComplete="family-name"
                         value={customer.lastName}
-                        onChange={(e) =>
-                          setCustomer((current) => ({
-                            ...current,
-                            lastName: e.target.value,
-                          }))
-                        }
+                        readOnly
                         required
                       />
                     </div>
@@ -490,12 +607,7 @@ export function BookBusinessPage() {
                       type="email"
                       autoComplete="email"
                       value={customer.email}
-                      onChange={(e) =>
-                        setCustomer((current) => ({
-                          ...current,
-                          email: e.target.value,
-                        }))
-                      }
+                      readOnly
                       required
                     />
                   </div>
@@ -506,12 +618,7 @@ export function BookBusinessPage() {
                       type="tel"
                       autoComplete="tel"
                       value={customer.phone}
-                      onChange={(e) =>
-                        setCustomer((current) => ({
-                          ...current,
-                          phone: e.target.value,
-                        }))
-                      }
+                      readOnly
                     />
                   </div>
                   <div className="form-row">
@@ -579,6 +686,7 @@ export function BookBusinessPage() {
                   {submitting ? 'Sending request…' : 'Request appointment'}
                 </button>
               </form>
+              )
             )}
             </div>
           </>

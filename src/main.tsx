@@ -1,9 +1,17 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import './index.css'
+
+registerSW({
+  immediate: true,
+  onRegisterError(error) {
+    console.error('BookingBase service worker registration failed', error)
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

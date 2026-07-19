@@ -19,6 +19,7 @@ import type {
   AuthResponse,
   CustomerRegisterRequest,
   LoginRequest,
+  MessageResponse,
 } from '../types/api'
 
 type AuthContextValue = {
@@ -28,9 +29,12 @@ type AuthContextValue = {
   isAuthenticated: boolean
   isCustomer: boolean
   isAdmin: boolean
+  isVerified: boolean
   isLoading: boolean
   login: (request: LoginRequest) => Promise<void>
-  registerCustomer: (request: CustomerRegisterRequest) => Promise<void>
+  registerCustomer: (
+    request: CustomerRegisterRequest,
+  ) => Promise<MessageResponse>
   logout: () => Promise<void>
 }
 
@@ -58,8 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerCustomer = useCallback(
     async (request: CustomerRegisterRequest) => {
-      const response = await authApi.registerCustomer(request)
-      setStored(saveAuth(response))
+      return authApi.registerCustomer(request)
     },
     [],
   )
@@ -84,6 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(stored?.accessToken),
       isCustomer: stored?.user?.role === 'CUSTOMER',
       isAdmin: stored?.user?.role === 'ADMIN',
+      // Old grandfathered sessions may predate this response property.
+      isVerified: stored?.user?.emailVerified !== false,
       isLoading,
       login,
       registerCustomer,

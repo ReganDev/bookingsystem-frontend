@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiClientError, getApiErrorMessage } from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import { safeReturnTo, withReturnTo } from '../lib/navigation'
 
 export function SignUpPage() {
   const { registerCustomer } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnTo = safeReturnTo(searchParams.get('returnTo'), '/book')
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -30,7 +33,12 @@ export function SignUpPage() {
         ...form,
         phone: form.phone || undefined,
       })
-      navigate('/book')
+      const params = new URLSearchParams({
+        email: form.email.trim().toLowerCase(),
+        returnTo,
+      })
+      sessionStorage.setItem('verification-return-to', returnTo)
+      navigate(`/check-email?${params.toString()}`)
     } catch (err) {
       let message = 'Unable to create your account. Please try again.'
       if (err instanceof ApiClientError) {
@@ -115,7 +123,8 @@ export function SignUpPage() {
       </form>
 
       <p className="auth-footer">
-        Already have an account? <Link to="/login">Sign in</Link>
+        Already have an account?{' '}
+        <Link to={withReturnTo('/login', returnTo)}>Sign in</Link>
       </p>
       <p className="auth-footer">
         Run a business? <Link to="/contact">Get in touch</Link> about taking

@@ -18,3 +18,30 @@ export function updateBusiness(
     token,
   })
 }
+
+export function uploadBusinessPhotos(
+  businessId: string,
+  files: File[],
+  token: string,
+) {
+  const formData = new FormData()
+  files.forEach((file) => formData.append('files', file))
+
+  return apiRequest<Business>(`/businesses/${businessId}/photos`, {
+    method: 'POST',
+    body: formData,
+    token,
+  })
+}
+
+export function removeBusinessPhoto(
+  businessId: string,
+  photoUrl: string,
+  token: string,
+) {
+  return apiRequest<Business>(`/businesses/${businessId}/photos`, {
+    method: 'DELETE',
+    body: { photoUrl },
+    token,
+  })
+}

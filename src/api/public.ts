@@ -46,10 +46,12 @@ export function getAvailability(
 export function createPublicBooking(
   businessId: string,
   request: PublicBookingRequest,
+  token: string,
 ) {
   return apiRequest<Booking>(`/public/businesses/${businessId}/bookings`, {
     method: 'POST',
     body: request,
+    token,
   })
 }
 

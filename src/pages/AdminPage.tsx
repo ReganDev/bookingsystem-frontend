@@ -124,9 +124,9 @@ export function AdminPage() {
             <h3>Create a business account</h3>
           </div>
           <p className="panel-hint">
-            Sets up the business and its owner login in one go. Share the email
-            and password with the business owner; they sign in at the normal
-            login page.
+            Sets up the business and emails the owner a verification link.
+            Share the temporary password securely; they can sign in after
+            confirming their email.
           </p>
 
           {created && (
@@ -137,8 +137,8 @@ export function AdminPage() {
                 <strong>{created.password}</strong>
               </p>
               <p>
-                Copy these now and share them securely. The password is not
-                shown again.
+                A verification email was sent to the owner. Copy the temporary
+                password now and share it securely; it is not shown again.
               </p>
             </div>
           )}

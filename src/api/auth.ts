@@ -3,6 +3,7 @@ import type {
   AuthResponse,
   CustomerRegisterRequest,
   LoginRequest,
+  MessageResponse,
 } from '../types/api'
 
 export function login(request: LoginRequest) {
@@ -13,9 +14,23 @@ export function login(request: LoginRequest) {
 }
 
 export function registerCustomer(request: CustomerRegisterRequest) {
-  return apiRequest<AuthResponse>('/auth/register-customer', {
+  return apiRequest<MessageResponse>('/auth/register-customer', {
     method: 'POST',
     body: request,
+  })
+}
+
+export function verifyEmail(token: string) {
+  return apiRequest<MessageResponse>('/auth/verify-email', {
+    method: 'POST',
+    body: { token },
+  })
+}
+
+export function resendVerification(email: string) {
+  return apiRequest<MessageResponse>('/auth/resend-verification', {
+    method: 'POST',
+    body: { email },
   })
 }
 

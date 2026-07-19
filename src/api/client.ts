@@ -44,11 +44,12 @@ function doFetch(
   body: unknown,
   token: string | null | undefined,
 ) {
+  const isFormData = body instanceof FormData
   const headers: Record<string, string> = {
     Accept: 'application/json',
   }
 
-  if (body !== undefined) {
+  if (body !== undefined && !isFormData) {
     headers['Content-Type'] = 'application/json'
   }
 
@@ -59,7 +60,12 @@ function doFetch(
   return fetch(url, {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body:
+      body === undefined
+        ? undefined
+        : isFormData
+          ? body
+          : JSON.stringify(body),
   })
 }
 
@@ -113,7 +119,10 @@ export async function apiRequest<T>(
   const url = `${API_BASE}${path}`
 
   if (import.meta.env.DEV) {
-    console.info(`[api] ${method} ${url}`, body ?? '')
+    console.info(
+      `[api] ${method} ${url}`,
+      body instanceof FormData ? '[multipart form data]' : (body ?? ''),
+    )
   }
 
   let response = await doFetch(url, method, body, token)

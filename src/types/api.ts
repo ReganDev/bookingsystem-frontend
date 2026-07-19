@@ -17,6 +17,7 @@ export interface User {
   phone?: string
   role: UserRole
   isActive: boolean
+  emailVerified: boolean
 }
 
 export interface Business {
@@ -105,6 +106,10 @@ export interface CustomerRegisterRequest {
   email: string
   password: string
   phone?: string
+}
+
+export interface MessageResponse {
+  message: string
 }
 
 export interface RegisterRequest {
@@ -219,6 +224,7 @@ export interface Page<T> {
 export interface ApiError {
   message?: string
   error?: string
+  code?: string
   status?: number
   errors?: Record<string, string>
   fieldErrors?: Record<string, string>

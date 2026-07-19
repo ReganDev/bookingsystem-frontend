@@ -2,7 +2,14 @@ import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export function PublicLayout() {
-  const { isAuthenticated, isCustomer, isAdmin, user, logout } = useAuth()
+  const {
+    isAuthenticated,
+    isCustomer,
+    isAdmin,
+    isVerified,
+    user,
+    logout,
+  } = useAuth()
   const navigate = useNavigate()
 
   return (
@@ -27,7 +34,16 @@ export function PublicLayout() {
           )}
           {isAuthenticated && isCustomer && (
             <>
-              <span>Hi, {user?.firstName}</span>
+              {isVerified ? (
+                <span>Hi, {user?.firstName}</span>
+              ) : (
+                <Link
+                  to={`/check-email?email=${encodeURIComponent(user?.email ?? '')}`}
+                  className="header-link"
+                >
+                  Verify your email
+                </Link>
+              )}
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={async () => {
