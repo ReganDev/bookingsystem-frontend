@@ -8,7 +8,7 @@ import { CalendarPanel } from '../components/CalendarPanel'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
 import { PhotosPanel } from '../components/PhotosPanel'
 import { useAuth } from '../context/AuthContext'
-import type { Booking, BookingStatus, Service } from '../types/api'
+import type { Booking, BookingStatus, Business, Service } from '../types/api'
 
 type Tab =
   | 'bookings'
@@ -45,8 +45,16 @@ function formatPrice(price?: number, currency = 'GBP') {
   }).format(price)
 }
 
-export function DashboardPage() {
-  const { business, accessToken } = useAuth()
+export function DashboardPage({
+  business: businessOverride,
+  token: tokenOverride,
+}: {
+  business?: Business
+  token?: string
+} = {}) {
+  const auth = useAuth()
+  const business = businessOverride ?? auth.business
+  const accessToken = tokenOverride ?? auth.accessToken
   const [tab, setTab] = useState<Tab>('bookings')
   const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<Service[]>([])

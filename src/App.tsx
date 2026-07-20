@@ -5,6 +5,7 @@ import { NetworkStatus } from './components/NetworkStatus'
 import { PublicLayout } from './components/PublicLayout'
 import { useAuth } from './context/AuthContext'
 import { resolveHashPath } from './lib/hashRedirect'
+import { AdminBusinessDashboardPage } from './pages/AdminBusinessDashboardPage'
 import { AdminPage } from './pages/AdminPage'
 import { BookBusinessPage } from './pages/BookBusinessPage'
 import { BrowseBusinessesPage } from './pages/BrowseBusinessesPage'
@@ -200,6 +201,14 @@ export default function App() {
         element={
           <AdminRoute>
             <AdminPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/businesses/:businessId"
+        element={
+          <AdminRoute>
+            <AdminBusinessDashboardPage />
           </AdminRoute>
         }
       />

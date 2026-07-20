@@ -248,6 +248,14 @@ export function AdminPage() {
                     {business.email} · /book/{business.slug} ·{' '}
                     {business.isActive ? 'Active' : 'Inactive'}
                   </div>
+                  <div className="actions-row">
+                    <Link
+                      className="btn btn-secondary btn-sm"
+                      to={`/admin/businesses/${business.id}`}
+                    >
+                      Manage
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
