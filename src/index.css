@@ -158,19 +158,10 @@ button {
   box-shadow: var(--shadow-sm);
 }
 
-.brand-mark {
-  width: 2rem;
-  height: 2rem;
-  display: grid;
-  place-items: center;
-  border-radius: 0.6rem;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: 1rem;
-}
-
-.brand-name {
-  font-size: 1.1rem;
+.brand-logo {
+  height: 1.6rem;
+  width: auto;
+  display: block;
 }
 
 .app-main {

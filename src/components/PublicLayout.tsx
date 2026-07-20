@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import bookingbaseLogo from '../assets/bookingbase-logo.png'
 
 export function PublicLayout() {
   const {
@@ -16,10 +17,7 @@ export function PublicLayout() {
     <div className="app-shell public-shell">
       <header className="app-header public-header">
         <Link to="/book" className="brand-link" aria-label="BookingBase home">
-          <span className="brand-mark" aria-hidden="true">
-            B
-          </span>
-          <span className="brand-name">bookingbase</span>
+          <img src={bookingbaseLogo} alt="BookingBase" className="brand-logo" />
         </Link>
         <div className="app-header-meta">
           {!isAuthenticated && (
