@@ -16,3 +16,27 @@ export function createService(
     token,
   })
 }
+
+export function updateService(
+  businessId: string,
+  serviceId: string,
+  request: ServiceRequest,
+  token: string,
+) {
+  return apiRequest<Service>(`/businesses/${businessId}/services/${serviceId}`, {
+    method: 'PUT',
+    body: request,
+    token,
+  })
+}
+
+export function deleteService(
+  businessId: string,
+  serviceId: string,
+  token: string,
+) {
+  return apiRequest<void>(`/businesses/${businessId}/services/${serviceId}`, {
+    method: 'DELETE',
+    token,
+  })
+}

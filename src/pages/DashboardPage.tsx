@@ -358,12 +358,42 @@ function ServicesPanel({
   onCreated: () => Promise<void>
 }) {
   const [showForm, setShowForm] = useState(false)
+  const [editingService, setEditingService] = useState<Service | null>(null)
   const [name, setName] = useState('')
   const [durationMinutes, setDurationMinutes] = useState(30)
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
+  const [isActive, setIsActive] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  function openCreateForm() {
+    setEditingService(null)
+    setName('')
+    setDescription('')
+    setPrice('')
+    setDurationMinutes(30)
+    setIsActive(true)
+    setShowForm(true)
+  }
+
+  function openEditForm(service: Service) {
+    setEditingService(service)
+    setName(service.name)
+    setDescription(service.description ?? '')
+    setPrice(service.price != null ? String(service.price) : '')
+    setDurationMinutes(service.durationMinutes)
+    setIsActive(service.isActive ?? true)
+    setShowForm(true)
+    setError(null)
+  }
+
+  function closeForm() {
+    setShowForm(false)
+    setEditingService(null)
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -371,32 +401,78 @@ function ServicesPanel({
     setError(null)
 
     try {
-      await servicesApi.createService(
-        businessId,
-        {
-          name,
-          description: description || undefined,
-          durationMinutes,
-          price: price ? Number(price) : undefined,
-          color: '#3B82F6',
-          isActive: true,
-        },
-        token,
-      )
-      setName('')
-      setDescription('')
-      setPrice('')
-      setDurationMinutes(30)
-      setShowForm(false)
+      const request = {
+        name,
+        description: description || undefined,
+        durationMinutes,
+        price: price ? Number(price) : undefined,
+        color: editingService?.color ?? '#3B82F6',
+        isActive,
+      }
+
+      if (editingService) {
+        await servicesApi.updateService(businessId, editingService.id, request, token)
+      } else {
+        await servicesApi.createService(businessId, request, token)
+      }
+
+      closeForm()
       await onCreated()
     } catch (err) {
       const message =
         err instanceof ApiClientError
           ? err.message
-          : 'Failed to create service.'
+          : `Failed to ${editingService ? 'update' : 'create'} service.`
       setError(message)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleToggleActive(service: Service) {
+    setRowError(null)
+    try {
+      await servicesApi.updateService(
+        businessId,
+        service.id,
+        {
+          name: service.name,
+          description: service.description || undefined,
+          durationMinutes: service.durationMinutes,
+          price: service.price ?? undefined,
+          color: service.color,
+          isActive: !service.isActive,
+        },
+        token,
+      )
+      await onCreated()
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError
+          ? err.message
+          : 'Failed to update service.'
+      setRowError({ id: service.id, message })
+    }
+  }
+
+  async function handleDelete(service: Service) {
+    if (!window.confirm(`Delete “${service.name}”? This can't be undone.`)) {
+      return
+    }
+
+    setRowError(null)
+    setDeletingId(service.id)
+    try {
+      await servicesApi.deleteService(businessId, service.id, token)
+      await onCreated()
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError
+          ? err.message
+          : 'Failed to delete service.'
+      setRowError({ id: service.id, message })
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -406,7 +482,7 @@ function ServicesPanel({
         <h3>Services</h3>
         <button
           className="btn btn-primary btn-sm"
-          onClick={() => setShowForm((value) => !value)}
+          onClick={() => (showForm ? closeForm() : openCreateForm())}
         >
           {showForm ? 'Close' : 'Add service'}
         </button>
@@ -427,7 +503,12 @@ function ServicesPanel({
         <div className="list">
           {services.map((service) => (
             <div key={service.id} className="list-item">
-              <div className="list-item-title">{service.name}</div>
+              <div className="list-item-title">
+                {service.name}
+                {service.isActive === false && (
+                  <span className="status-badge status-CANCELLED"> Inactive</span>
+                )}
+              </div>
               <div className="list-item-meta">
                 {service.durationMinutes} min ·{' '}
                 {service.price != null
@@ -437,6 +518,30 @@ function ServicesPanel({
               {service.description && (
                 <div className="list-item-meta">{service.description}</div>
               )}
+              {rowError?.id === service.id && (
+                <div className="error-banner">{rowError.message}</div>
+              )}
+              <div className="actions-row">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => openEditForm(service)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => handleToggleActive(service)}
+                >
+                  {service.isActive === false ? 'Activate' : 'Deactivate'}
+                </button>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => handleDelete(service)}
+                  disabled={deletingId === service.id}
+                >
+                  {deletingId === service.id ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -485,8 +590,20 @@ function ServicesPanel({
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
+            Active (visible to customers for new bookings)
+          </label>
           <button className="btn btn-primary" type="submit" disabled={submitting}>
-            {submitting ? 'Saving…' : 'Save service'}
+            {submitting
+              ? 'Saving…'
+              : editingService
+                ? 'Save changes'
+                : 'Save service'}
           </button>
         </form>
       )}
