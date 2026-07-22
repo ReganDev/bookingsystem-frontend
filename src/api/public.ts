@@ -3,6 +3,8 @@ import type {
   Booking,
   Business,
   CustomerRequest,
+  GuestBookingStartRequest,
+  GuestBookingStartResponse,
   PublicBookingRequest,
   Service,
   TimeSlot,
@@ -66,6 +68,27 @@ export function submitEnquiry(request: EnquiryRequest) {
   return apiRequest<void>('/public/enquiry', {
     method: 'POST',
     body: request,
+  })
+}
+
+export function startGuestBooking(request: GuestBookingStartRequest) {
+  return apiRequest<GuestBookingStartResponse>('/public/bookings/start', {
+    method: 'POST',
+    body: request,
+  })
+}
+
+export function verifyGuestBooking(bookingSessionId: string, code: string) {
+  return apiRequest<Booking>('/public/bookings/verify', {
+    method: 'POST',
+    body: { bookingSessionId, code },
+  })
+}
+
+export function resendGuestBookingCode(bookingSessionId: string) {
+  return apiRequest<void>('/public/bookings/resend', {
+    method: 'POST',
+    body: { bookingSessionId },
   })
 }
 

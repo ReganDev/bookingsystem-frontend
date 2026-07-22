@@ -229,3 +229,21 @@ export interface ApiError {
   errors?: Record<string, string>
   fieldErrors?: Record<string, string>
 }
+
+export type GuestBookingStartRequest = {
+  businessId: string
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+  serviceId: string
+  startDatetime: string
+  customerNotes?: string
+  emailReminder: boolean
+  smsReminder: boolean
+}
+
+export type GuestBookingStartResponse = {
+  bookingSessionId: string
+  expiresAt: string
+}
