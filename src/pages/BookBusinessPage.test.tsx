@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiClientError } from '../api/client'
 import * as publicApi from '../api/public'
 import { AuthProvider } from '../context/AuthContext'
 import type { Booking, Business, Service, TimeSlot } from '../types/api'
@@ -254,7 +255,7 @@ describe('BookBusinessPage', () => {
     }, 'access-token')
   })
 
-  it('requires an account before an anonymous customer can submit', async () => {
+  it('offers the guest details form before an anonymous customer can submit', async () => {
     const user = userEvent.setup()
     renderPage()
 
@@ -267,9 +268,11 @@ describe('BookBusinessPage', () => {
     await user.click(firstSlot)
 
     expect(
-      screen.getByRole('heading', {
-        name: 'Sign in to complete your booking',
-      }),
+      screen.getByRole('heading', { name: 'Your details' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('First name')).toHaveValue('')
+    expect(
+      screen.getByRole('button', { name: /email me a code/i }),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Request appointment' }),
@@ -300,9 +303,7 @@ describe('BookBusinessPage', () => {
     renderPage()
 
     expect(
-      await screen.findByRole('heading', {
-        name: 'Sign in to complete your booking',
-      }),
+      await screen.findByRole('heading', { name: 'Your details' }),
     ).toBeInTheDocument()
   })
 
@@ -322,5 +323,108 @@ describe('BookBusinessPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Request booking' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('guest booking with email code', () => {
+  it('lets a guest book by entering a 6-digit emailed code', async () => {
+    vi.mocked(publicApi.startGuestBooking).mockResolvedValue({
+      bookingSessionId: 'sess-1',
+      expiresAt: new Date(Date.now() + 10 * 60000).toISOString(),
+    })
+    const confirmed: Booking = {
+      id: 'bk-1',
+      businessId: business.id,
+      customer: { id: 'c-1', firstName: 'Gwen', lastName: 'Guest', email: 'gwen@example.com' },
+      service: haircut,
+      startDatetime: slots[0].startDatetime,
+      endDatetime: slots[0].endDatetime,
+      status: 'PENDING',
+    } as Booking
+    vi.mocked(publicApi.verifyGuestBooking).mockResolvedValue(confirmed)
+
+    const user = userEvent.setup()
+    renderPage(false)
+
+    await user.click(await screen.findByText('Haircut'))
+    await chooseDay(user, slotNine)
+    await user.click(
+      screen.getByRole('button', {
+        name: slotNine.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }),
+    )
+
+    // Guest details form instead of a sign-in wall
+    await user.type(screen.getByLabelText('First name'), 'Gwen')
+    await user.type(screen.getByLabelText('Last name'), 'Guest')
+    await user.type(screen.getByLabelText('Email'), 'gwen@example.com')
+    await user.click(screen.getByRole('button', { name: /email me a code/i }))
+
+    expect(publicApi.startGuestBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        businessId: business.id,
+        email: 'gwen@example.com',
+        serviceId: haircut.id,
+      }),
+    )
+
+    // Code entry appears with the email echoed back
+    await screen.findByText(/we sent a code to/i)
+    await user.type(screen.getByLabelText(/6-digit code/i), '123456')
+    await user.click(screen.getByRole('button', { name: /confirm booking/i }))
+
+    expect(publicApi.verifyGuestBooking).toHaveBeenCalledWith('sess-1', '123456')
+    await screen.findByText(/thanks, gwen/i)
+  })
+
+  it('shows an error and keeps the code form on a wrong code', async () => {
+    vi.mocked(publicApi.startGuestBooking).mockResolvedValue({
+      bookingSessionId: 'sess-1',
+      expiresAt: new Date(Date.now() + 10 * 60000).toISOString(),
+    })
+    vi.mocked(publicApi.verifyGuestBooking).mockRejectedValue(
+      new ApiClientError(400, { message: 'Incorrect code. Please try again.' }),
+    )
+
+    const user = userEvent.setup()
+    renderPage(false)
+
+    await user.click(await screen.findByText('Haircut'))
+    await chooseDay(user, slotNine)
+    await user.click(
+      screen.getByRole('button', {
+        name: slotNine.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }),
+    )
+    await user.type(screen.getByLabelText('First name'), 'Gwen')
+    await user.type(screen.getByLabelText('Last name'), 'Guest')
+    await user.type(screen.getByLabelText('Email'), 'gwen@example.com')
+    await user.click(screen.getByRole('button', { name: /email me a code/i }))
+
+    await screen.findByText(/we sent a code to/i)
+    await user.type(screen.getByLabelText(/6-digit code/i), '000000')
+    await user.click(screen.getByRole('button', { name: /confirm booking/i }))
+
+    await screen.findByText(/incorrect code/i)
+    expect(screen.getByLabelText(/6-digit code/i)).toBeInTheDocument()
+  })
+
+  it('still shows the prefilled one-click flow for verified customers', async () => {
+    const user = userEvent.setup()
+    renderPage(true)
+
+    await user.click(await screen.findByText('Haircut'))
+    await chooseDay(user, slotNine)
+    await user.click(
+      screen.getByRole('button', {
+        name: slotNine.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }),
+    )
+
+    expect(screen.getByLabelText('First name')).toHaveValue('Jane')
+    expect(
+      screen.getByRole('button', { name: /request appointment/i }),
+    ).toBeInTheDocument()
+    expect(publicApi.startGuestBooking).not.toHaveBeenCalled()
   })
 })

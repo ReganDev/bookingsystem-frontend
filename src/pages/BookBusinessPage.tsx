@@ -63,14 +63,7 @@ const STEP_LABELS: Record<Step, string> = {
 
 export function BookBusinessPage() {
   const { slug } = useParams<{ slug: string }>()
-  const {
-    isAuthenticated,
-    isCustomer,
-    isVerified,
-    accessToken,
-    user,
-    logout,
-  } = useAuth()
+  const { isCustomer, isVerified, accessToken, user } = useAuth()
   const [business, setBusiness] = useState<Business | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -94,6 +87,12 @@ export function BookBusinessPage() {
     email: '',
     phone: '',
   })
+  const [otpSession, setOtpSession] = useState<{
+    id: string
+    email: string
+  } | null>(null)
+  const [otpCode, setOtpCode] = useState('')
+  const [resendCooldown, setResendCooldown] = useState(0)
 
   // Logged-in customers get their details filled in automatically
   useEffect(() => {
@@ -152,6 +151,15 @@ export function BookBusinessPage() {
     emailReminder,
     smsReminder,
   ])
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(
+      () => setResendCooldown((s) => Math.max(0, s - 1)),
+      1000,
+    )
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   const loadBusiness = useCallback(async () => {
     if (!slug) return
@@ -275,6 +283,74 @@ export function BookBusinessPage() {
       loadSlots()
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleGuestStart(event: FormEvent) {
+    event.preventDefault()
+    if (!business || !selectedSlot) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const session = await publicApi.startGuestBooking({
+        businessId: business.id,
+        firstName: customer.firstName.trim(),
+        lastName: customer.lastName.trim(),
+        email: customer.email.trim(),
+        phone: customer.phone || undefined,
+        serviceId,
+        startDatetime: selectedSlot,
+        customerNotes: customerNotes || undefined,
+        emailReminder,
+        smsReminder,
+      })
+      setOtpSession({ id: session.bookingSessionId, email: customer.email.trim() })
+      setOtpCode('')
+      setResendCooldown(60)
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError
+          ? getApiErrorMessage(err.status, err.body)
+          : 'Unable to send your code. Please try again.'
+      setError(message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleGuestVerify(event: FormEvent) {
+    event.preventDefault()
+    if (!otpSession) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const booking = await publicApi.verifyGuestBooking(otpSession.id, otpCode)
+      if (slug) sessionStorage.removeItem(`${DRAFT_PREFIX}${slug}`)
+      setConfirmation(booking)
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError
+          ? getApiErrorMessage(err.status, err.body)
+          : 'Unable to confirm your booking. Please try again.'
+      setError(message)
+      if (err instanceof ApiClientError && err.status === 409) {
+        // Slot taken while verifying: back to time selection
+        setOtpSession(null)
+        setStep(3)
+        loadSlots()
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleGuestResend() {
+    if (!otpSession || resendCooldown > 0) return
+    setResendCooldown(60)
+    try {
+      await publicApi.resendGuestBookingCode(otpSession.id)
+    } catch {
+      // Resend is best-effort; the cooldown still applies
     }
   }
 
@@ -529,48 +605,7 @@ export function BookBusinessPage() {
             )}
 
             {step === 4 && (
-              !isCustomer || !isVerified ? (
-                <section className="auth-gate">
-                  <h4>Sign in to complete your booking</h4>
-                  <p>
-                    A verified customer account is required so the business
-                    knows who made the appointment.
-                  </p>
-                  {!isAuthenticated && (
-                    <div className="actions-row">
-                      <Link
-                        className="btn btn-primary"
-                        to={withReturnTo('/login', `/book/${slug}`)}
-                      >
-                        Sign in
-                      </Link>
-                      <Link
-                        className="btn btn-secondary"
-                        to={withReturnTo('/signup', `/book/${slug}`)}
-                      >
-                        Create account
-                      </Link>
-                    </div>
-                  )}
-                  {isAuthenticated && isCustomer && !isVerified && (
-                    <Link
-                      className="btn btn-primary"
-                      to={`/check-email?email=${encodeURIComponent(user?.email ?? '')}&returnTo=${encodeURIComponent(`/book/${slug}`)}`}
-                    >
-                      Verify your email
-                    </Link>
-                  )}
-                  {isAuthenticated && !isCustomer && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => void logout()}
-                    >
-                      Sign out and use a customer account
-                    </button>
-                  )}
-                </section>
-              ) : (
+              isCustomer && isVerified ? (
               <form className="form-grid booking-form" onSubmit={handleSubmit}>
                 <section className="form-section">
                   <h4>Your details</h4>
@@ -686,6 +721,153 @@ export function BookBusinessPage() {
                   {submitting ? 'Sending request…' : 'Request appointment'}
                 </button>
               </form>
+              ) : otpSession ? (
+                <form className="form-grid booking-form" onSubmit={handleGuestVerify}>
+                  <section className="form-section">
+                    <h4>Check your email</h4>
+                    <p className="slot-hint">
+                      We sent a code to <strong>{otpSession.email}</strong>.
+                      Enter it below to confirm your booking.
+                    </p>
+                    <div className="form-row">
+                      <label htmlFor="otp-code">6-digit code</label>
+                      <input
+                        id="otp-code"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        pattern="\d{6}"
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={(e) =>
+                          setOtpCode(e.target.value.replace(/\D/g, ''))
+                        }
+                        required
+                        autoFocus
+                      />
+                    </div>
+                    <div className="actions-row">
+                      <button
+                        className="btn btn-primary"
+                        type="submit"
+                        disabled={submitting || otpCode.length !== 6}
+                      >
+                        {submitting ? 'Confirming…' : 'Confirm booking'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={handleGuestResend}
+                        disabled={resendCooldown > 0}
+                      >
+                        {resendCooldown > 0
+                          ? `Resend code (${resendCooldown}s)`
+                          : 'Resend code'}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-link"
+                      onClick={() => setOtpSession(null)}
+                    >
+                      Wrong email? Edit your details
+                    </button>
+                  </section>
+                </form>
+              ) : (
+                <form className="form-grid booking-form" onSubmit={handleGuestStart}>
+                  <section className="form-section">
+                    <h4>Your details</h4>
+                    <p className="slot-hint">
+                      No account needed — we&apos;ll email you a code to
+                      confirm your booking.{' '}
+                      <Link to={withReturnTo('/login', `/book/${slug}`)}>
+                        Have an account? Sign in
+                      </Link>
+                    </p>
+                    <div className="booking-name-fields">
+                      <div className="form-row">
+                        <label htmlFor="firstName">First name</label>
+                        <input
+                          id="firstName"
+                          autoComplete="given-name"
+                          value={customer.firstName}
+                          onChange={(e) =>
+                            setCustomer((c) => ({ ...c, firstName: e.target.value }))
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="form-row">
+                        <label htmlFor="lastName">Last name</label>
+                        <input
+                          id="lastName"
+                          autoComplete="family-name"
+                          value={customer.lastName}
+                          onChange={(e) =>
+                            setCustomer((c) => ({ ...c, lastName: e.target.value }))
+                          }
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="email">Email</label>
+                      <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        value={customer.email}
+                        onChange={(e) =>
+                          setCustomer((c) => ({ ...c, email: e.target.value }))
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="phone">Phone (optional)</label>
+                      <input
+                        id="phone"
+                        type="tel"
+                        autoComplete="tel"
+                        value={customer.phone}
+                        onChange={(e) =>
+                          setCustomer((c) => ({ ...c, phone: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="notes">Notes (optional)</label>
+                      <textarea
+                        id="notes"
+                        rows={3}
+                        value={customerNotes}
+                        onChange={(e) => setCustomerNotes(e.target.value)}
+                      />
+                    </div>
+                  </section>
+
+                  {selectedService && selectedSlot && (
+                    <div className="booking-summary">
+                      <p className="booking-summary-label">Your appointment</p>
+                      <strong>{selectedService.name}</strong>
+                      <span>
+                        {formatDayHeading(selectedDate)} at {formatTime(selectedSlot)}
+                      </span>
+                      <span>
+                        {selectedService.durationMinutes} min ·{' '}
+                        {formatPrice(selectedService.price, business.currency ?? 'GBP')}
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    className="btn btn-primary"
+                    type="submit"
+                    disabled={submitting || !selectedSlot}
+                  >
+                    {submitting ? 'Sending code…' : 'Email me a code'}
+                  </button>
+                </form>
               )
             )}
             </div>
