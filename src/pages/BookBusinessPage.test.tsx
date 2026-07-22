@@ -427,4 +427,42 @@ describe('guest booking with email code', () => {
     ).toBeInTheDocument()
     expect(publicApi.startGuestBooking).not.toHaveBeenCalled()
   })
+
+  it('clears a pending OTP session when the guest navigates back and picks a different slot', async () => {
+    vi.mocked(publicApi.startGuestBooking).mockResolvedValue({
+      bookingSessionId: 'sess-1',
+      expiresAt: new Date(Date.now() + 10 * 60000).toISOString(),
+    })
+
+    const user = userEvent.setup()
+    renderPage(false)
+
+    await user.click(await screen.findByText('Haircut'))
+    await chooseDay(user, slotNine)
+    await user.click(
+      screen.getByRole('button', {
+        name: slotNine.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }),
+    )
+    await user.type(screen.getByLabelText('First name'), 'Gwen')
+    await user.type(screen.getByLabelText('Last name'), 'Guest')
+    await user.type(screen.getByLabelText('Email'), 'gwen@example.com')
+    await user.click(screen.getByRole('button', { name: /email me a code/i }))
+
+    await screen.findByText(/we sent a code to/i)
+
+    // Guest goes back and picks a different time slot
+    await user.click(screen.getByRole('button', { name: '← Back' }))
+    await user.click(
+      screen.getByRole('button', {
+        name: slotTen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }),
+    )
+
+    // The stale OTP session must not still be bound to the old slot
+    expect(
+      screen.getByRole('button', { name: /email me a code/i }),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText(/6-digit code/i)).not.toBeInTheDocument()
+  })
 })

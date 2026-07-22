@@ -214,7 +214,14 @@ export function BookBusinessPage() {
     loadSlots()
   }, [loadSlots])
 
+  function resetOtpSession() {
+    setOtpSession(null)
+    setOtpCode('')
+    setResendCooldown(0)
+  }
+
   function pickService(id: string) {
+    resetOtpSession()
     if (id !== serviceId) {
       setServiceId(id)
       setSelectedDate('')
@@ -224,16 +231,19 @@ export function BookBusinessPage() {
   }
 
   function pickDay(isoDate: string) {
+    resetOtpSession()
     setSelectedDate(isoDate)
     setStep(3)
   }
 
   function pickSlot(startDatetime: string) {
+    resetOtpSession()
     setSelectedSlot(startDatetime)
     setStep(4)
   }
 
   function goBack() {
+    resetOtpSession()
     setStep((current) => Math.max(1, current - 1) as Step)
   }
 
@@ -468,7 +478,10 @@ export function BookBusinessPage() {
                 <button
                   type="button"
                   className="wizard-progress-button"
-                  onClick={() => setStep(n)}
+                  onClick={() => {
+                    resetOtpSession()
+                    setStep(n)
+                  }}
                   disabled={n >= step}
                   aria-current={n === step ? 'step' : undefined}
                 >
@@ -767,7 +780,7 @@ export function BookBusinessPage() {
                     <button
                       type="button"
                       className="btn-link"
-                      onClick={() => setOtpSession(null)}
+                      onClick={resetOtpSession}
                     >
                       Wrong email? Edit your details
                     </button>
