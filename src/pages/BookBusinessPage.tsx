@@ -323,6 +323,11 @@ export function BookBusinessPage() {
           ? getApiErrorMessage(err.status, err.body)
           : 'Unable to send your code. Please try again.'
       setError(message)
+      if (err instanceof ApiClientError && err.status === 409) {
+        // Slot taken while filling in details: back to time selection
+        setStep(3)
+        loadSlots()
+      }
     } finally {
       setSubmitting(false)
     }

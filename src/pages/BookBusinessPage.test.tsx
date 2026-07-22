@@ -409,6 +409,35 @@ describe('guest booking with email code', () => {
     expect(screen.getByLabelText(/6-digit code/i)).toBeInTheDocument()
   })
 
+  it('returns to time selection when the slot is taken before a code is requested', async () => {
+    vi.mocked(publicApi.startGuestBooking).mockRejectedValue(
+      new ApiClientError(409, { message: 'This slot was just booked by someone else.' }),
+    )
+
+    const user = userEvent.setup()
+    renderPage(false)
+
+    await user.click(await screen.findByText('Haircut'))
+    await chooseDay(user, slotNine)
+    await user.click(
+      screen.getByRole('button', {
+        name: slotNine.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }),
+    )
+    await user.type(screen.getByLabelText('First name'), 'Gwen')
+    await user.type(screen.getByLabelText('Last name'), 'Guest')
+    await user.type(screen.getByLabelText('Email'), 'gwen@example.com')
+    await user.click(screen.getByRole('button', { name: /email me a code/i }))
+
+    await screen.findByText(/this slot was just booked/i)
+    await screen.findByText('Pick a time')
+    expect(
+      screen.getByRole('button', {
+        name: slotNine.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }),
+    ).toBeInTheDocument()
+  })
+
   it('still shows the prefilled one-click flow for verified customers', async () => {
     const user = userEvent.setup()
     renderPage(true)
