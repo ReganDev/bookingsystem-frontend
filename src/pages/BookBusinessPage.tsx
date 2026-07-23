@@ -390,25 +390,38 @@ export function BookBusinessPage() {
   }
 
   if (confirmation) {
+    const isConfirmed = confirmation.status === 'CONFIRMED'
     return (
       <div className="panel booking-panel booking-confirmation">
         <div className="confirmation-mark" aria-hidden="true">
           ✓
         </div>
         <div>
-          <p className="booking-eyebrow">Request sent</p>
+          <p className="booking-eyebrow">
+            {isConfirmed ? 'Confirmed ✓' : 'Request sent'}
+          </p>
           <h2>Thanks, {confirmation.customer.firstName}</h2>
           <p>
             Your appointment with <strong>{business.name}</strong> for{' '}
             <strong>{confirmation.service.name}</strong> on{' '}
-            <strong>{formatDateTime(confirmation.startDatetime)}</strong> has
-            been sent.
+            <strong>{formatDateTime(confirmation.startDatetime)}</strong>{' '}
+            {isConfirmed ? 'is booked.' : 'has been sent.'}
           </p>
         </div>
         <p className="confirmation-note">
-          {business.name} will confirm your appointment. You&apos;ll hear back
-          at <strong>{confirmation.customer.email}</strong>. There&apos;s
-          nothing else you need to do.
+          {isConfirmed ? (
+            <>
+              You&apos;re booked — there&apos;s nothing else you need to do.
+              If anything changes, {business.name} will contact you at{' '}
+              <strong>{confirmation.customer.email}</strong>.
+            </>
+          ) : (
+            <>
+              {business.name} will confirm your appointment. You&apos;ll hear
+              back at <strong>{confirmation.customer.email}</strong>.
+              There&apos;s nothing else you need to do.
+            </>
+          )}
         </p>
         <div className="actions-row">
           <Link to="/book" className="btn btn-secondary">

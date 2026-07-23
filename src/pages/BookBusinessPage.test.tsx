@@ -375,6 +375,51 @@ describe('guest booking with email code', () => {
 
     expect(publicApi.verifyGuestBooking).toHaveBeenCalledWith('sess-1', '123456')
     await screen.findByText(/thanks, gwen/i)
+    expect(screen.getByText('Request sent')).toBeInTheDocument()
+    expect(screen.getByText(/will confirm your appointment/i)).toBeInTheDocument()
+  })
+
+  it('shows instant confirmation when the business auto-confirms', async () => {
+    vi.mocked(publicApi.startGuestBooking).mockResolvedValue({
+      bookingSessionId: 'sess-1',
+      expiresAt: new Date(Date.now() + 10 * 60000).toISOString(),
+    })
+    const confirmed: Booking = {
+      id: 'bk-1',
+      businessId: business.id,
+      customer: { id: 'c-1', firstName: 'Gwen', lastName: 'Guest', email: 'gwen@example.com' },
+      service: haircut,
+      startDatetime: slots[0].startDatetime,
+      endDatetime: slots[0].endDatetime,
+      status: 'CONFIRMED',
+    } as Booking
+    vi.mocked(publicApi.verifyGuestBooking).mockResolvedValue(confirmed)
+
+    const user = userEvent.setup()
+    renderPage(false)
+
+    await user.click(await screen.findByText('Haircut'))
+    await chooseDay(user, slotNine)
+    await user.click(
+      screen.getByRole('button', {
+        name: slotNine.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }),
+    )
+
+    await user.type(screen.getByLabelText('First name'), 'Gwen')
+    await user.type(screen.getByLabelText('Last name'), 'Guest')
+    await user.type(screen.getByLabelText('Email'), 'gwen@example.com')
+    await user.click(screen.getByRole('button', { name: /email me a code/i }))
+
+    await screen.findByText(/we sent a code to/i)
+    await user.type(screen.getByLabelText(/6-digit code/i), '123456')
+    await user.click(screen.getByRole('button', { name: /confirm booking/i }))
+
+    await screen.findByText(/thanks, gwen/i)
+    expect(screen.getByText('Confirmed ✓')).toBeInTheDocument()
+    expect(screen.getByText(/you.re booked/i)).toBeInTheDocument()
+    expect(screen.queryByText('Request sent')).not.toBeInTheDocument()
+    expect(screen.queryByText(/will confirm your appointment/i)).not.toBeInTheDocument()
   })
 
   it('shows an error and keeps the code form on a wrong code', async () => {
