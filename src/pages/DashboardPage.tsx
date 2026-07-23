@@ -4,6 +4,7 @@ import * as bookingsApi from '../api/bookings'
 import * as customersApi from '../api/customers'
 import * as schedulesApi from '../api/schedules'
 import * as servicesApi from '../api/services'
+import { BookingSettingsPanel } from '../components/BookingSettingsPanel'
 import { CalendarPanel } from '../components/CalendarPanel'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
 import { PhotosPanel } from '../components/PhotosPanel'
@@ -17,6 +18,7 @@ type Tab =
   | 'opening-hours'
   | 'new-booking'
   | 'photos'
+  | 'settings'
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   bookings:
@@ -31,6 +33,8 @@ const TAB_DESCRIPTIONS: Record<Tab, string> = {
     'Add a booking yourself, useful for phone or walk-in customers.',
   photos:
     'Photos shown next to your booking form. Upload images to show off your business.',
+  settings:
+    'How your bookings behave, like whether new bookings are confirmed automatically.',
 }
 
 function formatDateTime(value: string) {
@@ -208,6 +212,12 @@ export function DashboardPage({
         >
           Photos
         </button>
+        <button
+          className={`tab ${tab === 'settings' ? 'active' : ''}`}
+          onClick={() => setTab('settings')}
+        >
+          Settings
+        </button>
       </div>
 
       <p className="tab-description">{TAB_DESCRIPTIONS[tab]}</p>
@@ -259,6 +269,9 @@ export function DashboardPage({
           )}
           {tab === 'photos' && (
             <PhotosPanel businessId={businessId!} token={token!} />
+          )}
+          {tab === 'settings' && (
+            <BookingSettingsPanel businessId={businessId!} token={token!} />
           )}
         </>
       )}

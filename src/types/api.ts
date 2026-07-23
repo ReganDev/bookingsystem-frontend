@@ -40,6 +40,7 @@ export interface Business {
   bookingAdvanceDays?: number
   bookingNoticeHours?: number
   cancellationNoticeHours?: number
+  autoConfirmBookings?: boolean
   slotDurationMinutes?: number
   bufferMinutes?: number
   isActive?: boolean
