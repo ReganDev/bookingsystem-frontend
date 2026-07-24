@@ -2,24 +2,16 @@ import { useEffect, useState } from 'react'
 
 const SLIDES = [
   {
-    src: '/auth-carousel/handyman.png',
-    alt: 'Handyman completing a service for a customer',
+    src: '/auth-carousel/hair-styling.png',
+    alt: 'Client enjoying a hair styling appointment',
   },
   {
-    src: '/auth-carousel/hair-salon.png',
-    alt: 'Hair stylist finishing a client appointment',
+    src: '/auth-carousel/hair-wash.png',
+    alt: 'Stylist washing a client’s hair at the salon',
   },
   {
-    src: '/auth-carousel/business-handshake.png',
-    alt: 'Business professional greeting a client',
-  },
-  {
-    src: '/auth-carousel/salon-station.png',
-    alt: 'Modern salon styling station',
-  },
-  {
-    src: '/auth-carousel/barbershop.png',
-    alt: 'Barbershop interior with styling chair',
+    src: '/auth-carousel/hair-spray.png',
+    alt: 'Stylist finishing a client’s hairstyle',
   },
 ] as const
 
