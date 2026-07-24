@@ -19,7 +19,7 @@ export default defineConfig({
         name: 'BookingBase',
         short_name: 'BookingBase',
         description: 'Discover businesses and manage appointments with BookingBase.',
-        theme_color: '#7c3aed',
+        theme_color: '#047857',
         background_color: '#f8fafc',
         display: 'standalone',
         orientation: 'any',

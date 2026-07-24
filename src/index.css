@@ -1,8 +1,8 @@
 :root {
   /* Design tokens */
-  --color-primary: #7c3aed;
-  --color-primary-hover: #6d28d9;
-  --color-primary-soft: #f5f3ff;
+  --color-primary: #047857;
+  --color-primary-hover: #065f46;
+  --color-primary-soft: #ecfdf5;
   --color-on-primary: #ffffff;
   --color-accent: #059669;
   --color-accent-soft: #ecfdf5;
@@ -183,6 +183,110 @@ button {
   padding: 1.5rem;
 }
 
+.auth-page--split {
+  display: block;
+  padding: 0;
+  place-items: unset;
+  align-content: unset;
+}
+
+.auth-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  min-height: 100vh;
+}
+
+.auth-split-content {
+  display: grid;
+  place-items: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--color-bg);
+}
+
+.auth-card {
+  max-width: 440px;
+}
+
+.auth-carousel {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  background: #052e1b;
+}
+
+.auth-carousel-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.auth-carousel-image.active {
+  opacity: 1;
+}
+
+.auth-carousel-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(6, 78, 59, 0.72),
+    rgba(6, 78, 59, 0.18)
+  );
+}
+
+.auth-carousel-caption {
+  position: absolute;
+  left: clamp(1.5rem, 4vw, 2.5rem);
+  right: clamp(1.5rem, 4vw, 2.5rem);
+  bottom: clamp(1.5rem, 4vw, 2.5rem);
+  color: #ffffff;
+  z-index: 1;
+}
+
+.auth-carousel-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.auth-carousel-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-carousel-image {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .auth-split {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .auth-carousel {
+    min-height: 18rem;
+    max-height: 22rem;
+  }
+
+  .auth-split-content {
+    min-height: auto;
+  }
+}
+
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -235,7 +339,7 @@ button {
 .form-row textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
+  box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
 }
 
 .field-hint {
@@ -434,7 +538,7 @@ button {
 
 .onboarding {
   background: var(--color-primary-soft);
-  border: 1px solid #ddd6fe;
+  border: 1px solid #a7f3d0;
   border-radius: var(--radius-md);
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.25rem;
@@ -529,8 +633,8 @@ button {
 }
 
 .status-COMPLETED {
-  background: #e0e7ff;
-  color: #3730a3;
+  background: #ccfbf1;
+  color: #115e59;
 }
 
 .status-NO_SHOW {
@@ -658,9 +762,9 @@ button {
   padding: 3rem 1.5rem 2.25rem;
   margin-bottom: 1.5rem;
   background:
-    radial-gradient(circle at 50% 0%, #ede9fe 0, transparent 55%),
+    radial-gradient(circle at 50% 0%, #d1fae5 0, transparent 55%),
     linear-gradient(160deg, var(--color-primary-soft), #ffffff 75%);
-  border: 1px solid #ddd6fe;
+  border: 1px solid #a7f3d0;
   border-radius: var(--radius-lg);
 }
 
@@ -702,7 +806,7 @@ button {
 
 .search-bar:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
+  box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
 }
 
 .search-bar svg {
@@ -811,8 +915,8 @@ button {
 }
 
 .business-card:hover {
-  border-color: #c4b5fd;
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.12);
+  border-color: #6ee7b7;
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.14);
   transform: translateY(-1px);
   text-decoration: none;
 }
@@ -1142,7 +1246,7 @@ button {
 }
 
 .service-option:hover {
-  border-color: #c4b5fd;
+  border-color: #6ee7b7;
 }
 
 .service-option.selected {
@@ -1386,7 +1490,7 @@ button {
 }
 
 .booking-day.available:hover {
-  background: #ede9fe;
+  background: #d1fae5;
 }
 
 .booking-day.today {
@@ -1423,7 +1527,7 @@ button {
   display: grid;
   gap: 0.2rem;
   background: var(--color-primary-soft);
-  border: 1px solid #ddd6fe;
+  border: 1px solid #a7f3d0;
   border-radius: var(--radius-md);
   padding: 1rem 1.1rem;
   font-size: 0.95rem;
@@ -1578,7 +1682,7 @@ button {
   padding: 0.1rem 0.3rem;
   border-radius: 4px;
   background: var(--color-primary-soft);
-  color: #5b21b6;
+  color: #065f46;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1591,8 +1695,8 @@ button {
 }
 
 .calendar-chip.chip-COMPLETED {
-  background: #e0e7ff;
-  color: #3730a3;
+  background: #ccfbf1;
+  color: #115e59;
 }
 
 .calendar-chip.chip-PENDING {
