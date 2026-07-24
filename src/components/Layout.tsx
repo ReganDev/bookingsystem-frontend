@@ -1,4 +1,4 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export function Layout() {
@@ -28,14 +28,19 @@ export function Layout() {
 }
 
 export function AuthLayout() {
+  const location = useLocation()
+  const isLogin = location.pathname === '/login'
+
   return (
-    <div className="auth-page">
+    <div className={`auth-page${isLogin ? ' auth-page--split' : ''}`}>
       <Outlet />
-      <p className="auth-footer">
-        <Link to="/book">Book an appointment</Link> ·{' '}
-        <Link to="/signup">Create account</Link> ·{' '}
-        <Link to="/contact">Contact us</Link>
-      </p>
+      {!isLogin && (
+        <p className="auth-footer">
+          <Link to="/book">Book an appointment</Link> ·{' '}
+          <Link to="/signup">Create account</Link> ·{' '}
+          <Link to="/contact">Contact us</Link>
+        </p>
+      )}
     </div>
   )
 }
