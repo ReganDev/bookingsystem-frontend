@@ -1,22 +1,39 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type KeyboardEvent,
-} from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { ApiClientError } from '../api/client'
 import * as bookingsApi from '../api/bookings'
 import * as customersApi from '../api/customers'
-import type { Customer, Service } from '../types/api'
+import * as usersApi from '../api/users'
+import {
+  CustomerPicker,
+  EMPTY_CUSTOMER,
+  type CustomerMode,
+  type NewCustomer,
+} from './CustomerPicker'
+import { DateTimePickerField } from './DateTimePickerField'
+import { RecurrenceFields, MAX_OCCURRENCES, MIN_OCCURRENCES } from './RecurrenceFields'
+import { frequencyForUnit, type RecurrenceUnit } from '../lib/recurrence'
+import type {
+  Customer,
+  Service,
+  SkippedOccurrence,
+  StaffMember,
+} from '../types/api'
 
-const SEARCH_DEBOUNCE_MS = 250
-const MIN_SEARCH_LENGTH = 2
+const DEFAULT_OCCURRENCES = 12
 
-const LISTBOX_ID = 'customer-search-results'
-const optionId = (index: number) => `customer-option-${index}`
+type SeriesResult = {
+  createdCount: number
+  requestedCount: number
+  skipped: SkippedOccurrence[]
+}
 
-type CustomerMode = 'new' | 'existing'
+function formatSkipped(startDatetime: string) {
+  return new Date(startDatetime).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
+}
 
 export function NewBookingPanel({
   services,
@@ -30,176 +47,98 @@ export function NewBookingPanel({
   onCreated: () => Promise<void>
 }) {
   const [serviceId, setServiceId] = useState('')
+  const [staffId, setStaffId] = useState('')
   const [startDatetime, setStartDatetime] = useState('')
   const [customerNotes, setCustomerNotes] = useState('')
-  const [customer, setCustomer] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-  })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [seriesResult, setSeriesResult] = useState<SeriesResult | null>(null)
 
-  // 'new' stays the default: a business with no customers yet must not be sent
-  // looking for one, and this keeps the original flow untouched.
-  const [customerMode, setCustomerMode] = useState<CustomerMode>('new')
-  const [search, setSearch] = useState('')
-  const [results, setResults] = useState<Customer[]>([])
-  const [searching, setSearching] = useState(false)
-  const [searchError, setSearchError] = useState<string | null>(null)
+  // Repeat clients are the common case for an owner-made booking, so the
+  // picker opens on the existing list rather than an empty new-customer form.
+  const [customerMode, setCustomerMode] = useState<CustomerMode>('existing')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [highlightIndex, setHighlightIndex] = useState(-1)
-  const [listOpen, setListOpen] = useState(false)
+  const [newCustomer, setNewCustomer] = useState<NewCustomer>(EMPTY_CUSTOMER)
 
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  // "Change" swaps the selected-customer summary back for the search box, so the
-  // input does not exist yet when the click is handled. Focus it once it mounts.
-  const focusSearchOnClearRef = useRef(false)
-  // Typing fast puts several searches in flight and they can come back out of
-  // order, so a slow early one would overwrite the newest results. Only the
-  // request that is still the latest may write to state.
-  const latestSearchRef = useRef(0)
+  const [staff, setStaff] = useState<StaffMember[]>([])
 
+  const [repeats, setRepeats] = useState(false)
+  const [recurrenceUnit, setRecurrenceUnit] = useState<RecurrenceUnit>('weeks')
+  const [recurrenceInterval, setRecurrenceInterval] = useState(1)
+  const [occurrenceCount, setOccurrenceCount] = useState(DEFAULT_OCCURRENCES)
+
+  // A business that has never set "accepts bookings" gets no staff at all; the
+  // picker then stays hidden and bookings remain business-wide, as before.
   useEffect(() => {
-    if (customerMode !== 'existing' || selectedCustomer) return
-
-    const query = search.trim()
-    if (query.length < MIN_SEARCH_LENGTH) {
-      setResults([])
-      setSearching(false)
-      setSearchError(null)
-      setListOpen(false)
-      setHighlightIndex(-1)
-      return
+    let active = true
+    usersApi
+      .getStaff(businessId, token)
+      .then((members) => {
+        if (active) setStaff(members)
+      })
+      .catch(() => {
+        if (active) setStaff([])
+      })
+    return () => {
+      active = false
     }
-
-    setSearching(true)
-    const requestId = ++latestSearchRef.current
-
-    const timer = setTimeout(async () => {
-      try {
-        const page = await customersApi.searchCustomers(
-          businessId,
-          query,
-          token,
-        )
-        if (requestId !== latestSearchRef.current) return
-        setResults(page.content)
-        setSearchError(null)
-        setListOpen(true)
-        setHighlightIndex(page.content.length > 0 ? 0 : -1)
-      } catch (err) {
-        if (requestId !== latestSearchRef.current) return
-        setResults([])
-        setHighlightIndex(-1)
-        setListOpen(true)
-        setSearchError(
-          err instanceof ApiClientError
-            ? err.message
-            : 'Failed to search customers.',
-        )
-      } finally {
-        if (requestId === latestSearchRef.current) setSearching(false)
-      }
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => clearTimeout(timer)
-  }, [search, customerMode, selectedCustomer, businessId, token])
-
-  function selectCustomer(picked: Customer) {
-    // Any search still in flight is now irrelevant.
-    latestSearchRef.current++
-    setSelectedCustomer(picked)
-    setSearch(picked.fullName)
-    setResults([])
-    setSearching(false)
-    setSearchError(null)
-    setListOpen(false)
-    setHighlightIndex(-1)
-    setError(null)
-  }
-
-  useEffect(() => {
-    if (selectedCustomer || !focusSearchOnClearRef.current) return
-    focusSearchOnClearRef.current = false
-    searchInputRef.current?.focus()
-  }, [selectedCustomer])
-
-  function clearSelection() {
-    focusSearchOnClearRef.current = true
-    setSelectedCustomer(null)
-    setSearch('')
-    setResults([])
-    setListOpen(false)
-    setHighlightIndex(-1)
-  }
-
-  function changeMode(next: CustomerMode) {
-    setCustomerMode(next)
-    setError(null)
-    if (next === 'new') {
-      // Drop the picked customer, so the new-customer path can never submit
-      // against a selection the owner has navigated away from.
-      setSelectedCustomer(null)
-      setSearch('')
-      setResults([])
-      setListOpen(false)
-      setHighlightIndex(-1)
-    }
-  }
+  }, [businessId, token])
 
   function resetForm() {
-    setCustomer({ firstName: '', lastName: '', email: '', phone: '' })
+    setNewCustomer(EMPTY_CUSTOMER)
     setCustomerNotes('')
     setStartDatetime('')
     setServiceId('')
-    setCustomerMode('new')
+    setStaffId('')
     setSelectedCustomer(null)
-    setSearch('')
-    setResults([])
-    setListOpen(false)
-    setHighlightIndex(-1)
-  }
-
-  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      setListOpen(false)
-      return
-    }
-
-    if (!listOpen || results.length === 0) return
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      setHighlightIndex((current) => (current + 1) % results.length)
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      setHighlightIndex((current) =>
-        current <= 0 ? results.length - 1 : current - 1,
-      )
-    } else if (event.key === 'Enter') {
-      // Enter picks the highlighted customer instead of submitting a form that
-      // has no customer attached yet.
-      event.preventDefault()
-      const picked = results[highlightIndex]
-      if (picked) selectCustomer(picked)
-    }
+    setRepeats(false)
+    setRecurrenceUnit('weeks')
+    setRecurrenceInterval(1)
+    setOccurrenceCount(DEFAULT_OCCURRENCES)
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
+    if (!startDatetime) {
+      setError('Pick a date and time for the booking.')
+      return
+    }
+
     if (customerMode === 'existing' && !selectedCustomer) {
+      setError('Pick a customer from the list, or switch to “New customer”.')
+      return
+    }
+
+    if (
+      repeats &&
+      (occurrenceCount < MIN_OCCURRENCES || occurrenceCount > MAX_OCCURRENCES)
+    ) {
       setError(
-        'Pick a customer from the search results, or switch to “New customer”.',
+        `A repeating booking needs between ${MIN_OCCURRENCES} and ${MAX_OCCURRENCES} bookings.`,
       )
       return
     }
 
+    if (repeats) {
+      const maxInterval = recurrenceUnit === 'weeks' ? 52 : 12
+      const minInterval = 1
+      if (
+        recurrenceInterval < minInterval ||
+        recurrenceInterval > maxInterval
+      ) {
+        setError(
+          recurrenceUnit === 'weeks'
+            ? 'Repeat interval must be between 1 and 52 weeks.'
+            : 'Repeat interval must be between 1 and 12 months.',
+        )
+        return
+      }
+    }
+
     setSubmitting(true)
     setError(null)
+    setSeriesResult(null)
 
     try {
       // A customer picked from the list already has an id, so there is nothing
@@ -210,7 +149,7 @@ export function NewBookingPanel({
           : (
               await customersApi.getOrCreateCustomer(
                 businessId,
-                { ...customer, phone: customer.phone || undefined },
+                { ...newCustomer, phone: newCustomer.phone || undefined },
                 token,
               )
             ).id
@@ -218,24 +157,47 @@ export function NewBookingPanel({
       const start = new Date(startDatetime)
       const offset = start.toISOString()
 
-      await bookingsApi.createBooking(
-        businessId,
-        {
-          customerId,
-          serviceId,
-          startDatetime: offset,
-          customerNotes: customerNotes || undefined,
-        },
-        token,
-      )
+      const base = {
+        customerId,
+        serviceId,
+        staffId: staffId || undefined,
+        startDatetime: offset,
+        customerNotes: customerNotes || undefined,
+      }
 
+      if (repeats) {
+        const frequency = frequencyForUnit(recurrenceUnit)
+        const result = await bookingsApi.createRecurringBookings(
+          businessId,
+          {
+            ...base,
+            frequency,
+            occurrenceCount,
+            intervalWeeks:
+              recurrenceUnit === 'weeks' ? recurrenceInterval : undefined,
+            intervalMonths:
+              recurrenceUnit === 'months' ? recurrenceInterval : undefined,
+          },
+          token,
+        )
+        resetForm()
+        // Stay put: navigating away would throw away the report of which
+        // occurrences clashed and were skipped.
+        setSeriesResult({
+          createdCount: result.created.length,
+          requestedCount: occurrenceCount,
+          skipped: result.skipped,
+        })
+        await onCreated()
+        return
+      }
+
+      await bookingsApi.createBooking(businessId, base, token)
       resetForm()
       await onCreated()
     } catch (err) {
       const message =
-        err instanceof ApiClientError
-          ? err.message
-          : 'Failed to create booking.'
+        err instanceof ApiClientError ? err.message : 'Failed to create booking.'
       setError(message)
     } finally {
       setSubmitting(false)
@@ -243,10 +205,28 @@ export function NewBookingPanel({
   }
 
   const activeServices = services.filter((service) => service.isActive)
-  const showResultsList =
-    listOpen && !searching && !searchError && results.length > 0
-  const showNoMatches =
-    listOpen && !searching && !searchError && results.length === 0
+  const selectedService = activeServices.find((s) => s.id === serviceId)
+  const customerLabel =
+    customerMode === 'existing'
+      ? selectedCustomer?.fullName
+      : [newCustomer.firstName, newCustomer.lastName].filter(Boolean).join(' ')
+
+  const summary = [
+    customerLabel,
+    selectedService?.name,
+    startDatetime
+      ? new Date(startDatetime).toLocaleString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : null,
+    repeats ? `× ${occurrenceCount}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <div className="panel">
@@ -258,234 +238,144 @@ export function NewBookingPanel({
         <div className="empty-state">
           <strong>Add a service first</strong>
           <p>
-            Bookings are always for a service. Go to the “Services” tab and
-            add one, then come back here.
+            Bookings are always for a service. Go to the “Services” tab and add
+            one, then come back here.
           </p>
         </div>
       ) : (
         <>
           {error && <div className="error-banner">{error}</div>}
-          <form className="form-grid" onSubmit={handleSubmit}>
-            <div className="form-row">
-              <label htmlFor="service">Service</label>
-              <select
-                id="service"
-                value={serviceId}
-                onChange={(e) => setServiceId(e.target.value)}
-                required
+
+          {seriesResult && (
+            <div className="success-banner" role="status">
+              <strong>
+                Created {seriesResult.createdCount} of{' '}
+                {seriesResult.requestedCount} bookings.
+              </strong>
+              {seriesResult.skipped.length > 0 && (
+                <>
+                  {' '}
+                  Skipped{' '}
+                  {seriesResult.skipped
+                    .map((occurrence) => formatSkipped(occurrence.startDatetime))
+                    .join(', ')}{' '}
+                  — already booked.
+                </>
+              )}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="booking-form-grid">
+              <CustomerPicker
+                businessId={businessId}
+                token={token}
+                mode={customerMode}
+                onModeChange={(mode) => {
+                  setCustomerMode(mode)
+                  setError(null)
+                }}
+                selected={selectedCustomer}
+                onSelect={(customer) => {
+                  setSelectedCustomer(customer)
+                  if (customer) setError(null)
+                }}
+                newCustomer={newCustomer}
+                onNewCustomerChange={setNewCustomer}
+              />
+
+              <div className="booking-form-column">
+                <h4 className="booking-form-column-title">Details</h4>
+
+                <div className="form-row">
+                  <label htmlFor="service">Service</label>
+                  <select
+                    id="service"
+                    value={serviceId}
+                    onChange={(e) => setServiceId(e.target.value)}
+                    required
+                  >
+                    <option value="">Select a service</option>
+                    {activeServices.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name} ({service.durationMinutes} min)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {staff.length > 0 && (
+                  <fieldset className="customer-mode">
+                    <legend>Staff</legend>
+                    <label className="radio-row">
+                      <input
+                        type="radio"
+                        name="staff"
+                        checked={staffId === ''}
+                        onChange={() => setStaffId('')}
+                      />
+                      Any
+                    </label>
+                    {staff.map((member) => (
+                      <label className="radio-row" key={member.id}>
+                        <input
+                          type="radio"
+                          name="staff"
+                          checked={staffId === member.id}
+                          onChange={() => setStaffId(member.id)}
+                        />
+                        {member.fullName}
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
+
+                <DateTimePickerField
+                  id="startDatetime"
+                  label="Date & time"
+                  value={startDatetime}
+                  onChange={setStartDatetime}
+                  required
+                />
+
+                <RecurrenceFields
+                  repeats={repeats}
+                  onRepeatsChange={setRepeats}
+                  unit={recurrenceUnit}
+                  onUnitChange={setRecurrenceUnit}
+                  interval={recurrenceInterval}
+                  onIntervalChange={setRecurrenceInterval}
+                  occurrenceCount={occurrenceCount}
+                  onOccurrenceCountChange={setOccurrenceCount}
+                  startDatetime={startDatetime}
+                />
+
+                <div className="form-row">
+                  <label htmlFor="notes">Notes (optional)</label>
+                  <textarea
+                    id="notes"
+                    rows={3}
+                    value={customerNotes}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="booking-form-footer">
+              <p className="booking-form-summary">{summary}</p>
+              <button
+                className="btn btn-primary"
+                type="submit"
+                disabled={submitting}
               >
-                <option value="">Select a service</option>
-                {activeServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name} ({service.durationMinutes} min)
-                  </option>
-                ))}
-              </select>
+                {submitting
+                  ? 'Creating…'
+                  : repeats
+                    ? `Create ${occurrenceCount} bookings`
+                    : 'Create booking'}
+              </button>
             </div>
-            <div className="form-row">
-              <label htmlFor="startDatetime">Date & time</label>
-              <input
-                id="startDatetime"
-                type="datetime-local"
-                value={startDatetime}
-                onChange={(e) => setStartDatetime(e.target.value)}
-                required
-              />
-            </div>
-
-            <fieldset className="customer-mode">
-              <legend>Customer</legend>
-              <label className="radio-row">
-                <input
-                  type="radio"
-                  name="customerMode"
-                  checked={customerMode === 'existing'}
-                  onChange={() => changeMode('existing')}
-                />
-                Existing customer
-              </label>
-              <label className="radio-row">
-                <input
-                  type="radio"
-                  name="customerMode"
-                  checked={customerMode === 'new'}
-                  onChange={() => changeMode('new')}
-                />
-                New customer
-              </label>
-            </fieldset>
-
-            {customerMode === 'existing' ? (
-              selectedCustomer ? (
-                <div className="form-row">
-                  <span className="form-label">Booking for</span>
-                  <div className="customer-selected">
-                    <span>
-                      <strong>{selectedCustomer.fullName}</strong>
-                      <span className="customer-option-meta">
-                        {selectedCustomer.email}
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={clearSelection}
-                    >
-                      Change
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="form-row customer-search">
-                  <label htmlFor="customerSearch">Find customer</label>
-                  <input
-                    id="customerSearch"
-                    ref={searchInputRef}
-                    role="combobox"
-                    aria-expanded={showResultsList}
-                    aria-controls={LISTBOX_ID}
-                    aria-autocomplete="list"
-                    aria-activedescendant={
-                      showResultsList && highlightIndex >= 0
-                        ? optionId(highlightIndex)
-                        : undefined
-                    }
-                    autoComplete="off"
-                    placeholder="Search by name or email"
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value)
-                      setListOpen(true)
-                    }}
-                    onKeyDown={handleSearchKeyDown}
-                  />
-                  {searching && <p className="panel-hint">Searching…</p>}
-                  {searchError && (
-                    <p className="customer-results-empty" role="status">
-                      {searchError}
-                    </p>
-                  )}
-                  {showNoMatches && (
-                    <p className="customer-results-empty" role="status">
-                      No customers match “{search.trim()}”. Switch to “New
-                      customer” to add them.
-                    </p>
-                  )}
-                  {showResultsList && (
-                    <div
-                      className="customer-results"
-                      id={LISTBOX_ID}
-                      role="listbox"
-                      aria-label="Matching customers"
-                    >
-                      {results.map((result, index) => (
-                        <button
-                          key={result.id}
-                          type="button"
-                          id={optionId(index)}
-                          role="option"
-                          aria-selected={index === highlightIndex}
-                          className={
-                            index === highlightIndex
-                              ? 'customer-option is-highlighted'
-                              : 'customer-option'
-                          }
-                          onMouseEnter={() => setHighlightIndex(index)}
-                          onClick={() => selectCustomer(result)}
-                        >
-                          <strong>{result.fullName}</strong>
-                          <span className="customer-option-meta">
-                            {result.phone
-                              ? `${result.email} · ${result.phone}`
-                              : result.email}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            ) : (
-              <>
-                <div className="form-row">
-                  <label htmlFor="customerFirstName">
-                    Customer first name
-                  </label>
-                  <input
-                    id="customerFirstName"
-                    value={customer.firstName}
-                    onChange={(e) =>
-                      setCustomer((current) => ({
-                        ...current,
-                        firstName: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-                <div className="form-row">
-                  <label htmlFor="customerLastName">Customer last name</label>
-                  <input
-                    id="customerLastName"
-                    value={customer.lastName}
-                    onChange={(e) =>
-                      setCustomer((current) => ({
-                        ...current,
-                        lastName: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-                <div className="form-row">
-                  <label htmlFor="customerEmail">Customer email</label>
-                  <input
-                    id="customerEmail"
-                    type="email"
-                    value={customer.email}
-                    onChange={(e) =>
-                      setCustomer((current) => ({
-                        ...current,
-                        email: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-                <div className="form-row">
-                  <label htmlFor="customerPhone">
-                    Customer phone (optional)
-                  </label>
-                  <input
-                    id="customerPhone"
-                    value={customer.phone}
-                    onChange={(e) =>
-                      setCustomer((current) => ({
-                        ...current,
-                        phone: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              </>
-            )}
-
-            <div className="form-row">
-              <label htmlFor="notes">Notes (optional)</label>
-              <textarea
-                id="notes"
-                rows={3}
-                value={customerNotes}
-                onChange={(e) => setCustomerNotes(e.target.value)}
-              />
-            </div>
-            <button
-              className="btn btn-primary"
-              type="submit"
-              disabled={submitting}
-            >
-              {submitting ? 'Creating…' : 'Create booking'}
-            </button>
           </form>
         </>
       )}

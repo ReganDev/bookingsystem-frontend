@@ -1,0 +1,10 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [
+      ".cursor/skills/**",
+      ".claude/skills/**"
+    ],
+    "ignoreValues": []
+  }
+}

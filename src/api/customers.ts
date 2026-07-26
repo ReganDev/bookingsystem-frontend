@@ -1,6 +1,18 @@
 import { apiRequest } from './client'
 import type { Customer, CustomerRequest, Page } from '../types/api'
 
+/**
+ * The first page of the business's customers, so the picker can show who is
+ * already on the books instead of demanding a name from memory. Anyone past
+ * this page is reachable through {@link searchCustomers}.
+ */
+export function listCustomers(businessId: string, token: string, size = 50) {
+  return apiRequest<Page<Customer>>(
+    `/businesses/${businessId}/customers?size=${size}`,
+    { token },
+  )
+}
+
 /** Matches on first name, last name or email, case-insensitively. */
 export function searchCustomers(
   businessId: string,

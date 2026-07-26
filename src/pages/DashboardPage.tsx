@@ -4,16 +4,15 @@ import * as bookingsApi from '../api/bookings'
 import * as schedulesApi from '../api/schedules'
 import * as servicesApi from '../api/services'
 import { BookingSettingsPanel } from '../components/BookingSettingsPanel'
-import { CalendarPanel } from '../components/CalendarPanel'
+import { BookingsPanel } from '../components/BookingsPanel'
 import { NewBookingPanel } from '../components/NewBookingPanel'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
 import { PhotosPanel } from '../components/PhotosPanel'
 import { useAuth } from '../context/AuthContext'
-import type { Booking, BookingStatus, Business, Service } from '../types/api'
+import type { BookingStatus, Business, CancelScope, Service } from '../types/api'
 
 type Tab =
   | 'bookings'
-  | 'calendar'
   | 'services'
   | 'opening-hours'
   | 'new-booking'
@@ -22,9 +21,7 @@ type Tab =
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   bookings:
-    'Appointments your customers have made. Confirm, complete, or cancel them here.',
-  calendar:
-    'Your bookings laid out by month. Click a day to see its appointments.',
+    'Your schedule at a glance. Pick a day on the calendar to see appointments and confirm or cancel them.',
   services:
     'The treatments or appointments customers can book. Each needs a name and how long it takes.',
   'opening-hours':
@@ -35,10 +32,6 @@ const TAB_DESCRIPTIONS: Record<Tab, string> = {
     'Photos shown next to your booking form. Upload images to show off your business.',
   settings:
     'How your bookings behave, like whether new bookings are confirmed automatically.',
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString()
 }
 
 function formatPrice(price?: number, currency = 'GBP') {
@@ -60,7 +53,6 @@ export function DashboardPage({
   const business = businessOverride ?? auth.business
   const accessToken = tokenOverride ?? auth.accessToken
   const [tab, setTab] = useState<Tab>('bookings')
-  const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [hasOpeningHours, setHasOpeningHours] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -76,12 +68,10 @@ export function DashboardPage({
     setError(null)
 
     try {
-      const [bookingsPage, serviceList, scheduleList] = await Promise.all([
-        bookingsApi.getBookings(businessId, token),
+      const [serviceList, scheduleList] = await Promise.all([
         servicesApi.getServices(businessId, token),
         schedulesApi.getSchedules(businessId, token),
       ])
-      setBookings(bookingsPage.content)
       setServices(serviceList)
       setHasOpeningHours(scheduleList.length > 0)
     } catch (err) {
@@ -99,7 +89,11 @@ export function DashboardPage({
     loadData()
   }, [loadData])
 
-  async function handleStatusChange(bookingId: string, status: BookingStatus) {
+  async function handleStatusChange(
+    bookingId: string,
+    status: BookingStatus,
+    scope?: CancelScope,
+  ) {
     if (!businessId || !token) return
 
     try {
@@ -109,6 +103,7 @@ export function DashboardPage({
         status,
         token,
         status === 'CANCELLED' ? 'Cancelled from dashboard' : undefined,
+        scope,
       )
       await loadData()
     } catch (err) {
@@ -183,12 +178,6 @@ export function DashboardPage({
           Bookings
         </button>
         <button
-          className={`tab ${tab === 'calendar' ? 'active' : ''}`}
-          onClick={() => setTab('calendar')}
-        >
-          Calendar
-        </button>
-        <button
           className={`tab ${tab === 'services' ? 'active' : ''}`}
           onClick={() => setTab('services')}
         >
@@ -232,13 +221,11 @@ export function DashboardPage({
         <>
           {tab === 'bookings' && (
             <BookingsPanel
-              bookings={bookings}
+              businessId={businessId!}
+              token={token!}
               currency={business?.currency}
               onStatusChange={handleStatusChange}
             />
-          )}
-          {tab === 'calendar' && (
-            <CalendarPanel businessId={businessId!} token={token!} />
           )}
           {tab === 'services' && (
             <ServicesPanel
@@ -276,84 +263,6 @@ export function DashboardPage({
         </>
       )}
     </>
-  )
-}
-
-function BookingsPanel({
-  bookings,
-  currency,
-  onStatusChange,
-}: {
-  bookings: Booking[]
-  currency?: string
-  onStatusChange: (bookingId: string, status: BookingStatus) => void
-}) {
-  return (
-    <div className="panel">
-      <div className="panel-header">
-        <h3>Upcoming bookings</h3>
-        <span>{bookings.length} total</span>
-      </div>
-
-      {bookings.length === 0 ? (
-        <div className="empty-state">
-          <strong>No bookings yet</strong>
-          <p>
-            Bookings made by customers (or by you in the “New booking” tab)
-            will appear here. Share your booking page with customers to get
-            started.
-          </p>
-        </div>
-      ) : (
-        <div className="list">
-          {bookings.map((booking) => (
-            <div key={booking.id} className="list-item">
-              <div className="list-item-title">
-                {booking.service.name} · {booking.customer.firstName}{' '}
-                {booking.customer.lastName}
-              </div>
-              <div className="list-item-meta">
-                {formatDateTime(booking.startDatetime)} ·{' '}
-                {formatPrice(booking.price, currency)}
-              </div>
-              <span className={`status-badge status-${booking.status}`}>
-                {booking.status}
-              </span>
-              {booking.customerNotes && (
-                <div className="list-item-meta">Note: {booking.customerNotes}</div>
-              )}
-              <div className="actions-row">
-                {booking.status === 'PENDING' && (
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => onStatusChange(booking.id, 'CONFIRMED')}
-                  >
-                    Confirm
-                  </button>
-                )}
-                {booking.status !== 'CANCELLED' &&
-                  booking.status !== 'COMPLETED' && (
-                    <>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => onStatusChange(booking.id, 'COMPLETED')}
-                      >
-                        Complete
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => onStatusChange(booking.id, 'CANCELLED')}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   )
 }
 

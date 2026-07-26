@@ -194,6 +194,8 @@ export interface Booking {
     lastName: string
     fullName: string
   }
+  /** Present when this booking is one occurrence of a standing appointment. */
+  seriesId?: string
 }
 
 export interface BookingRequest {
@@ -203,6 +205,42 @@ export interface BookingRequest {
   startDatetime: string
   customerNotes?: string
   internalNotes?: string
+}
+
+/** MONTHLY means the same weekday of the month ("2nd Tuesday"), not the same date. */
+export type RecurrenceFrequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY'
+
+export interface RecurringBookingRequest extends BookingRequest {
+  frequency: RecurrenceFrequency
+  occurrenceCount: number
+  /** Gap between week-based occurrences when frequency is WEEKLY. */
+  intervalWeeks?: number
+  /** Gap between month-based occurrences when frequency is MONTHLY. */
+  intervalMonths?: number
+}
+
+export interface SkippedOccurrence {
+  startDatetime: string
+  reason: string
+}
+
+export interface RecurringBookingResponse {
+  seriesId: string
+  created: Booking[]
+  /** Occurrences that clashed with an existing booking and were not created. */
+  skipped: SkippedOccurrence[]
+}
+
+/** How far a cancellation reaches when the booking belongs to a series. */
+export type CancelScope = 'THIS_ONLY' | 'THIS_AND_FUTURE'
+
+/** A user who takes bookings. The owner appears here too. */
+export interface StaffMember {
+  id: string
+  firstName: string
+  lastName: string
+  fullName: string
+  acceptsBookings?: boolean
 }
 
 export interface PublicBookingRequest {
