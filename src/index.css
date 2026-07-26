@@ -347,7 +347,8 @@ button {
   color: var(--color-fg-subtle);
 }
 
-.checkbox-row {
+.checkbox-row,
+.radio-row {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
@@ -355,8 +356,95 @@ button {
   cursor: pointer;
 }
 
-.checkbox-row input {
+.checkbox-row input,
+.radio-row input {
   flex: none;
+}
+
+/* ---------- Existing-customer picker ---------- */
+
+.customer-mode {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.customer-mode legend {
+  padding: 0 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* Deliberately in flow rather than absolutely positioned: it can't be clipped
+   by an ancestor's overflow, and on a phone it pushes the form down instead of
+   covering the fields underneath. */
+.customer-results {
+  display: grid;
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.customer-option {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.customer-option:last-child {
+  border-bottom: none;
+}
+
+/* Highlight is driven by state, not :hover, so arrow keys and the mouse agree
+   on which row is current. */
+.customer-option.is-highlighted {
+  background: var(--color-primary-soft);
+}
+
+.customer-option:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.customer-option-meta {
+  color: var(--color-fg-muted);
+  font-size: 0.85rem;
+}
+
+.customer-results-empty {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: 0.875rem;
+}
+
+.customer-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+}
+
+.customer-selected > span {
+  display: grid;
+  gap: 0.1rem;
 }
 
 .password-row {
