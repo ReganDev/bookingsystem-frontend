@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { ApiClientError } from '../api/client'
 import * as bookingsApi from '../api/bookings'
-import * as customersApi from '../api/customers'
 import * as schedulesApi from '../api/schedules'
 import * as servicesApi from '../api/services'
 import { BookingSettingsPanel } from '../components/BookingSettingsPanel'
-import { CalendarPanel } from '../components/CalendarPanel'
+import { BookingsPanel } from '../components/BookingsPanel'
+import { NewBookingPanel } from '../components/NewBookingPanel'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
 import { PhotosPanel } from '../components/PhotosPanel'
 import { useAuth } from '../context/AuthContext'
-import type { Booking, BookingStatus, Business, Service } from '../types/api'
+import type { BookingStatus, Business, CancelScope, Service } from '../types/api'
 
 type Tab =
   | 'bookings'
-  | 'calendar'
   | 'services'
   | 'opening-hours'
   | 'new-booking'
@@ -22,9 +21,7 @@ type Tab =
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   bookings:
-    'Appointments your customers have made. Confirm, complete, or cancel them here.',
-  calendar:
-    'Your bookings laid out by month. Click a day to see its appointments.',
+    'Your schedule at a glance. Pick a day on the calendar to see appointments and confirm or cancel them.',
   services:
     'The treatments or appointments customers can book. Each needs a name and how long it takes.',
   'opening-hours':
@@ -35,10 +32,6 @@ const TAB_DESCRIPTIONS: Record<Tab, string> = {
     'Photos shown next to your booking form. Upload images to show off your business.',
   settings:
     'How your bookings behave, like whether new bookings are confirmed automatically.',
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString()
 }
 
 function formatPrice(price?: number, currency = 'GBP') {
@@ -60,7 +53,6 @@ export function DashboardPage({
   const business = businessOverride ?? auth.business
   const accessToken = tokenOverride ?? auth.accessToken
   const [tab, setTab] = useState<Tab>('bookings')
-  const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [hasOpeningHours, setHasOpeningHours] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -76,12 +68,10 @@ export function DashboardPage({
     setError(null)
 
     try {
-      const [bookingsPage, serviceList, scheduleList] = await Promise.all([
-        bookingsApi.getBookings(businessId, token),
+      const [serviceList, scheduleList] = await Promise.all([
         servicesApi.getServices(businessId, token),
         schedulesApi.getSchedules(businessId, token),
       ])
-      setBookings(bookingsPage.content)
       setServices(serviceList)
       setHasOpeningHours(scheduleList.length > 0)
     } catch (err) {
@@ -99,7 +89,11 @@ export function DashboardPage({
     loadData()
   }, [loadData])
 
-  async function handleStatusChange(bookingId: string, status: BookingStatus) {
+  async function handleStatusChange(
+    bookingId: string,
+    status: BookingStatus,
+    scope?: CancelScope,
+  ) {
     if (!businessId || !token) return
 
     try {
@@ -109,6 +103,7 @@ export function DashboardPage({
         status,
         token,
         status === 'CANCELLED' ? 'Cancelled from dashboard' : undefined,
+        scope,
       )
       await loadData()
     } catch (err) {
@@ -183,12 +178,6 @@ export function DashboardPage({
           Bookings
         </button>
         <button
-          className={`tab ${tab === 'calendar' ? 'active' : ''}`}
-          onClick={() => setTab('calendar')}
-        >
-          Calendar
-        </button>
-        <button
           className={`tab ${tab === 'services' ? 'active' : ''}`}
           onClick={() => setTab('services')}
         >
@@ -232,13 +221,11 @@ export function DashboardPage({
         <>
           {tab === 'bookings' && (
             <BookingsPanel
-              bookings={bookings}
+              businessId={businessId!}
+              token={token!}
               currency={business?.currency}
               onStatusChange={handleStatusChange}
             />
-          )}
-          {tab === 'calendar' && (
-            <CalendarPanel businessId={businessId!} token={token!} />
           )}
           {tab === 'services' && (
             <ServicesPanel
@@ -276,84 +263,6 @@ export function DashboardPage({
         </>
       )}
     </>
-  )
-}
-
-function BookingsPanel({
-  bookings,
-  currency,
-  onStatusChange,
-}: {
-  bookings: Booking[]
-  currency?: string
-  onStatusChange: (bookingId: string, status: BookingStatus) => void
-}) {
-  return (
-    <div className="panel">
-      <div className="panel-header">
-        <h3>Upcoming bookings</h3>
-        <span>{bookings.length} total</span>
-      </div>
-
-      {bookings.length === 0 ? (
-        <div className="empty-state">
-          <strong>No bookings yet</strong>
-          <p>
-            Bookings made by customers (or by you in the “New booking” tab)
-            will appear here. Share your booking page with customers to get
-            started.
-          </p>
-        </div>
-      ) : (
-        <div className="list">
-          {bookings.map((booking) => (
-            <div key={booking.id} className="list-item">
-              <div className="list-item-title">
-                {booking.service.name} · {booking.customer.firstName}{' '}
-                {booking.customer.lastName}
-              </div>
-              <div className="list-item-meta">
-                {formatDateTime(booking.startDatetime)} ·{' '}
-                {formatPrice(booking.price, currency)}
-              </div>
-              <span className={`status-badge status-${booking.status}`}>
-                {booking.status}
-              </span>
-              {booking.customerNotes && (
-                <div className="list-item-meta">Note: {booking.customerNotes}</div>
-              )}
-              <div className="actions-row">
-                {booking.status === 'PENDING' && (
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => onStatusChange(booking.id, 'CONFIRMED')}
-                  >
-                    Confirm
-                  </button>
-                )}
-                {booking.status !== 'CANCELLED' &&
-                  booking.status !== 'COMPLETED' && (
-                    <>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => onStatusChange(booking.id, 'COMPLETED')}
-                      >
-                        Complete
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => onStatusChange(booking.id, 'CANCELLED')}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   )
 }
 
@@ -619,195 +528,6 @@ function ServicesPanel({
                 : 'Save service'}
           </button>
         </form>
-      )}
-    </div>
-  )
-}
-
-function NewBookingPanel({
-  services,
-  businessId,
-  token,
-  onCreated,
-}: {
-  services: Service[]
-  businessId: string
-  token: string
-  onCreated: () => Promise<void>
-}) {
-  const [serviceId, setServiceId] = useState('')
-  const [startDatetime, setStartDatetime] = useState('')
-  const [customerNotes, setCustomerNotes] = useState('')
-  const [customer, setCustomer] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    setSubmitting(true)
-    setError(null)
-
-    try {
-      const createdCustomer = await customersApi.getOrCreateCustomer(
-        businessId,
-        {
-          ...customer,
-          phone: customer.phone || undefined,
-        },
-        token,
-      )
-
-      const start = new Date(startDatetime)
-      const offset = start.toISOString()
-
-      await bookingsApi.createBooking(
-        businessId,
-        {
-          customerId: createdCustomer.id,
-          serviceId,
-          startDatetime: offset,
-          customerNotes: customerNotes || undefined,
-        },
-        token,
-      )
-
-      setCustomer({ firstName: '', lastName: '', email: '', phone: '' })
-      setCustomerNotes('')
-      setStartDatetime('')
-      setServiceId('')
-      await onCreated()
-    } catch (err) {
-      const message =
-        err instanceof ApiClientError
-          ? err.message
-          : 'Failed to create booking.'
-      setError(message)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const activeServices = services.filter((service) => service.isActive)
-
-  return (
-    <div className="panel">
-      <div className="panel-header">
-        <h3>New booking</h3>
-      </div>
-
-      {activeServices.length === 0 ? (
-        <div className="empty-state">
-          <strong>Add a service first</strong>
-          <p>
-            Bookings are always for a service. Go to the “Services” tab and
-            add one, then come back here.
-          </p>
-        </div>
-      ) : (
-        <>
-          {error && <div className="error-banner">{error}</div>}
-          <form className="form-grid" onSubmit={handleSubmit}>
-            <div className="form-row">
-              <label htmlFor="service">Service</label>
-              <select
-                id="service"
-                value={serviceId}
-                onChange={(e) => setServiceId(e.target.value)}
-                required
-              >
-                <option value="">Select a service</option>
-                {activeServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name} ({service.durationMinutes} min)
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-row">
-              <label htmlFor="startDatetime">Date & time</label>
-              <input
-                id="startDatetime"
-                type="datetime-local"
-                value={startDatetime}
-                onChange={(e) => setStartDatetime(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="customerFirstName">Customer first name</label>
-              <input
-                id="customerFirstName"
-                value={customer.firstName}
-                onChange={(e) =>
-                  setCustomer((current) => ({
-                    ...current,
-                    firstName: e.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="customerLastName">Customer last name</label>
-              <input
-                id="customerLastName"
-                value={customer.lastName}
-                onChange={(e) =>
-                  setCustomer((current) => ({
-                    ...current,
-                    lastName: e.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="customerEmail">Customer email</label>
-              <input
-                id="customerEmail"
-                type="email"
-                value={customer.email}
-                onChange={(e) =>
-                  setCustomer((current) => ({
-                    ...current,
-                    email: e.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="customerPhone">Customer phone (optional)</label>
-              <input
-                id="customerPhone"
-                value={customer.phone}
-                onChange={(e) =>
-                  setCustomer((current) => ({
-                    ...current,
-                    phone: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="notes">Notes (optional)</label>
-              <textarea
-                id="notes"
-                rows={3}
-                value={customerNotes}
-                onChange={(e) => setCustomerNotes(e.target.value)}
-              />
-            </div>
-            <button className="btn btn-primary" type="submit" disabled={submitting}>
-              {submitting ? 'Creating…' : 'Create booking'}
-            </button>
-          </form>
-        </>
       )}
     </div>
   )

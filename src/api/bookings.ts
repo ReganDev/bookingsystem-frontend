@@ -3,7 +3,10 @@ import type {
   Booking,
   BookingRequest,
   BookingStatus,
+  CancelScope,
   Page,
+  RecurringBookingRequest,
+  RecurringBookingResponse,
 } from '../types/api'
 
 export function getBookings(businessId: string, token: string) {
@@ -37,18 +40,36 @@ export function createBooking(
   })
 }
 
+/** Creates a standing appointment. Occurrences that clash are skipped and reported. */
+export function createRecurringBookings(
+  businessId: string,
+  request: RecurringBookingRequest,
+  token: string,
+) {
+  return apiRequest<RecurringBookingResponse>(
+    `/businesses/${businessId}/bookings/recurring`,
+    {
+      method: 'POST',
+      body: request,
+      token,
+    },
+  )
+}
+
 export function updateBookingStatus(
   businessId: string,
   bookingId: string,
   status: BookingStatus,
   token: string,
   cancellationReason?: string,
+  // Only meaningful for a booking in a series; omitted means this one alone.
+  scope?: CancelScope,
 ) {
   return apiRequest<Booking>(
     `/businesses/${businessId}/bookings/${bookingId}/status`,
     {
       method: 'PATCH',
-      body: { status, cancellationReason },
+      body: { status, cancellationReason, scope },
       token,
     },
   )
