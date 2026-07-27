@@ -26,6 +26,14 @@ const services: Service[] = [
     durationMinutes: 45,
     isActive: true,
   },
+  {
+    id: 's-2',
+    businessId: 'b-1',
+    name: 'Mobile cut',
+    durationMinutes: 45,
+    isActive: true,
+    requiresCustomerAddress: true,
+  },
 ]
 
 const jane: Customer = {
@@ -70,8 +78,11 @@ function renderPanel() {
 }
 
 /** Fills in the service and date/time, which every path needs. */
-async function fillBookingDetails(user: ReturnType<typeof userEvent.setup>) {
-  await user.selectOptions(screen.getByLabelText('Service'), 's-1')
+async function fillBookingDetails(
+  user: ReturnType<typeof userEvent.setup>,
+  serviceId = 's-1',
+) {
+  await user.selectOptions(screen.getByLabelText('Service'), serviceId)
   await user.click(screen.getByLabelText('Date & time'))
   const dialog = await screen.findByRole('dialog')
   const day = within(dialog)
@@ -178,6 +189,55 @@ describe('NewBookingPanel', () => {
       await screen.findByText(/Pick a customer from the list/),
     ).toBeInTheDocument()
     expect(bookingsApi.createBooking).not.toHaveBeenCalled()
+  })
+
+  describe('mobile-visit services', () => {
+    it('hides the address section for ordinary services', async () => {
+      const user = userEvent.setup()
+      renderPanel()
+
+      await user.selectOptions(screen.getByLabelText('Service'), 's-1')
+
+      expect(screen.queryByLabelText('Address line 1')).not.toBeInTheDocument()
+    })
+
+    it('offers an optional address for mobile services and sends it when filled', async () => {
+      const user = userEvent.setup()
+      renderPanel()
+
+      await pickJane(user)
+      await fillBookingDetails(user, 's-2')
+      await user.type(screen.getByLabelText('Address line 1'), '1 High Street')
+      await user.type(screen.getByLabelText('Town or city'), 'Manchester')
+      await user.type(screen.getByLabelText('Postcode'), 'M1 1AE')
+      await user.click(screen.getByRole('button', { name: 'Create booking' }))
+
+      await waitFor(() =>
+        expect(bookingsApi.createBooking).toHaveBeenCalledWith(
+          'b-1',
+          expect.objectContaining({
+            serviceId: 's-2',
+            addressLine1: '1 High Street',
+            addressCity: 'Manchester',
+            addressPostcode: 'M1 1AE',
+          }),
+          'tok',
+        ),
+      )
+    })
+
+    it('leaves the address out entirely when the owner skips it', async () => {
+      const user = userEvent.setup()
+      renderPanel()
+
+      await pickJane(user)
+      await fillBookingDetails(user, 's-2')
+      await user.click(screen.getByRole('button', { name: 'Create booking' }))
+
+      await waitFor(() => expect(bookingsApi.createBooking).toHaveBeenCalled())
+      const payload = vi.mocked(bookingsApi.createBooking).mock.calls[0][1]
+      expect(payload).not.toHaveProperty('addressLine1')
+    })
   })
 
   describe('recurring bookings', () => {

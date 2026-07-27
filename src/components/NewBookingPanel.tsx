@@ -62,6 +62,13 @@ export function NewBookingPanel({
 
   const [staff, setStaff] = useState<StaffMember[]>([])
 
+  const [address, setAddress] = useState({
+    line1: '',
+    line2: '',
+    city: '',
+    postcode: '',
+  })
+
   const [repeats, setRepeats] = useState(false)
   const [recurrenceUnit, setRecurrenceUnit] = useState<RecurrenceUnit>('weeks')
   const [recurrenceInterval, setRecurrenceInterval] = useState(1)
@@ -91,6 +98,7 @@ export function NewBookingPanel({
     setServiceId('')
     setStaffId('')
     setSelectedCustomer(null)
+    setAddress({ line1: '', line2: '', city: '', postcode: '' })
     setRepeats(false)
     setRecurrenceUnit('weeks')
     setRecurrenceInterval(1)
@@ -157,12 +165,22 @@ export function NewBookingPanel({
       const start = new Date(startDatetime)
       const offset = start.toISOString()
 
+      const includeAddress =
+        selectedService?.requiresCustomerAddress && address.line1.trim()
       const base = {
         customerId,
         serviceId,
         staffId: staffId || undefined,
         startDatetime: offset,
         customerNotes: customerNotes || undefined,
+        ...(includeAddress
+          ? {
+              addressLine1: address.line1.trim(),
+              addressLine2: address.line2.trim() || undefined,
+              addressCity: address.city.trim() || undefined,
+              addressPostcode: address.postcode.trim() || undefined,
+            }
+          : {}),
       }
 
       if (repeats) {
@@ -349,6 +367,52 @@ export function NewBookingPanel({
                   onOccurrenceCountChange={setOccurrenceCount}
                   startDatetime={startDatetime}
                 />
+
+                {selectedService?.requiresCustomerAddress && (
+                  <fieldset className="customer-mode">
+                    <legend>Customer address (optional)</legend>
+                    <div className="form-row">
+                      <label htmlFor="bookingAddressLine1">Address line 1</label>
+                      <input
+                        id="bookingAddressLine1"
+                        value={address.line1}
+                        onChange={(e) =>
+                          setAddress((a) => ({ ...a, line1: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="bookingAddressLine2">Address line 2</label>
+                      <input
+                        id="bookingAddressLine2"
+                        value={address.line2}
+                        onChange={(e) =>
+                          setAddress((a) => ({ ...a, line2: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="bookingAddressCity">Town or city</label>
+                      <input
+                        id="bookingAddressCity"
+                        value={address.city}
+                        onChange={(e) =>
+                          setAddress((a) => ({ ...a, city: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="bookingAddressPostcode">Postcode</label>
+                      <input
+                        id="bookingAddressPostcode"
+                        value={address.postcode}
+                        onChange={(e) =>
+                          setAddress((a) => ({ ...a, postcode: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </fieldset>
+                )}
 
                 <div className="form-row">
                   <label htmlFor="notes">Notes (optional)</label>
