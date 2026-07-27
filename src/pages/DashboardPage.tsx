@@ -286,6 +286,7 @@ function ServicesPanel({
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
   const [isActive, setIsActive] = useState(true)
+  const [requiresCustomerAddress, setRequiresCustomerAddress] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null)
@@ -298,6 +299,7 @@ function ServicesPanel({
     setPrice('')
     setDurationMinutes(30)
     setIsActive(true)
+    setRequiresCustomerAddress(false)
     setShowForm(true)
   }
 
@@ -308,6 +310,7 @@ function ServicesPanel({
     setPrice(service.price != null ? String(service.price) : '')
     setDurationMinutes(service.durationMinutes)
     setIsActive(service.isActive ?? true)
+    setRequiresCustomerAddress(service.requiresCustomerAddress ?? false)
     setShowForm(true)
     setError(null)
   }
@@ -330,6 +333,7 @@ function ServicesPanel({
         price: price ? Number(price) : undefined,
         color: editingService?.color ?? '#3B82F6',
         isActive,
+        requiresCustomerAddress,
       }
 
       if (editingService) {
@@ -430,6 +434,9 @@ function ServicesPanel({
                 {service.isActive === false && (
                   <span className="status-badge status-CANCELLED"> Inactive</span>
                 )}
+                {service.requiresCustomerAddress && (
+                  <span className="status-badge status-CONFIRMED"> Mobile</span>
+                )}
               </div>
               <div className="list-item-meta">
                 {service.durationMinutes} min ·{' '}
@@ -519,6 +526,14 @@ function ServicesPanel({
               onChange={(e) => setIsActive(e.target.checked)}
             />
             Active (visible to customers for new bookings)
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={requiresCustomerAddress}
+              onChange={(e) => setRequiresCustomerAddress(e.target.checked)}
+            />
+            Mobile visit — this service happens at the customer's address
           </label>
           <button className="btn btn-primary" type="submit" disabled={submitting}>
             {submitting

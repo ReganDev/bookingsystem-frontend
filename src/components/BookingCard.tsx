@@ -16,6 +16,23 @@ function formatPrice(price?: number, currency = 'GBP') {
   }).format(price)
 }
 
+function formatAddress(booking: Booking) {
+  return [
+    booking.addressLine1,
+    booking.addressLine2,
+    booking.addressCity,
+    booking.addressPostcode,
+  ]
+    .filter(Boolean)
+    .join(', ')
+}
+
+function formatDistance(distanceMeters: number, durationSeconds?: number) {
+  const miles = (distanceMeters / 1609.344).toFixed(1)
+  if (durationSeconds == null) return `${miles} mi drive`
+  return `${miles} mi · ~${Math.round(durationSeconds / 60)} min drive`
+}
+
 export function BookingCard({
   booking,
   currency,
@@ -30,6 +47,7 @@ export function BookingCard({
   ) => void
 }) {
   const price = formatPrice(booking.price, currency)
+  const address = formatAddress(booking)
 
   return (
     <article className="booking-card">
@@ -54,6 +72,27 @@ export function BookingCard({
           </span>
           {booking.seriesId && <SeriesBadge />}
         </div>
+        {address && (
+          <p className="booking-card-address">
+            At: {address}
+            {booking.distanceMeters != null && (
+              <>
+                {' · '}
+                <strong>
+                  {formatDistance(booking.distanceMeters, booking.durationSeconds)}
+                </strong>
+              </>
+            )}
+            {' · '}
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Directions
+            </a>
+          </p>
+        )}
         {booking.customerNotes && (
           <p className="booking-card-note">Note: {booking.customerNotes}</p>
         )}

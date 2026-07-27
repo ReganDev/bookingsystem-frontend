@@ -155,6 +155,56 @@ describe('BookingsPanel', () => {
     })
     expect(getBookingsInRange).toHaveBeenCalledTimes(2)
   })
+
+  it('shows address, drive distance and a directions link on mobile-visit bookings', async () => {
+    getBookingsInRange.mockResolvedValue([
+      booking({
+        addressLine1: '1 High Street',
+        addressCity: 'Manchester',
+        addressPostcode: 'M1 1AE',
+        distanceMeters: 11587,
+        durationSeconds: 1080,
+      }),
+    ])
+
+    render(<BookingsPanel businessId="b-1" token="tok" currency="GBP" />)
+
+    expect(
+      await screen.findByText(/At: 1 High Street, Manchester, M1 1AE/),
+    ).toBeInTheDocument()
+    expect(screen.getByText('7.2 mi · ~18 min drive')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Directions' })).toHaveAttribute(
+      'href',
+      'https://www.google.com/maps/dir/?api=1&destination=' +
+        encodeURIComponent('1 High Street, Manchester, M1 1AE'),
+    )
+  })
+
+  it('shows address with directions but no distance while it is still computing', async () => {
+    getBookingsInRange.mockResolvedValue([
+      booking({
+        addressLine1: '1 High Street',
+        addressCity: 'Manchester',
+        addressPostcode: 'M1 1AE',
+      }),
+    ])
+
+    render(<BookingsPanel businessId="b-1" token="tok" currency="GBP" />)
+
+    expect(await screen.findByText(/At: 1 High Street/)).toBeInTheDocument()
+    expect(screen.queryByText(/mi ·/)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Directions' })).toBeInTheDocument()
+  })
+
+  it('renders no address block for ordinary bookings', async () => {
+    getBookingsInRange.mockResolvedValue([booking()])
+
+    render(<BookingsPanel businessId="b-1" token="tok" currency="GBP" />)
+
+    await screen.findByText('Cut and blow dry')
+    expect(screen.queryByText(/^At:/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Directions' })).not.toBeInTheDocument()
+  })
 })
 
 describe('groupBookingsByDay', () => {
