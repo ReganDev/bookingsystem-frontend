@@ -2270,6 +2270,153 @@ button {
 
 /* ---------- Opening hours ---------- */
 
+.hours-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.hours-summary {
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.hours-presets {
+  margin-top: -0.25rem;
+}
+
+.hours-week-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hours-day-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  transition: border-color 0.15s ease;
+}
+
+.hours-day-card:hover {
+  border-color: var(--color-border-strong);
+}
+
+.hours-day-card.is-open {
+  background: var(--color-surface);
+}
+
+.hours-day-card.is-closed {
+  background: var(--color-bg);
+}
+
+.hours-day-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.hours-day-name {
+  min-width: 6.5rem;
+  font-weight: 700;
+}
+
+.hours-day-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-fg-muted);
+}
+
+.hours-day-toggle input {
+  flex: none;
+}
+
+.hours-day-times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.hours-time-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.hours-time-separator {
+  align-self: end;
+  padding-bottom: 0.55rem;
+  color: var(--color-fg-subtle);
+  font-weight: 600;
+}
+
+.hours-closed-badge {
+  margin-left: auto;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-fg-subtle);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.hours-break-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.hours-break-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem 0.75rem;
+}
+
+.hours-break-label {
+  min-width: 4.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-fg-muted);
+}
+
+.hours-footer {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .hours-day-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hours-day-times,
+  .hours-closed-badge {
+    margin-left: 0;
+  }
+
+  .hours-break-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .schedule-grid {
   display: grid;
   gap: 0.75rem;

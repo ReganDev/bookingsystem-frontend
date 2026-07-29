@@ -33,19 +33,20 @@ describe('OpeningHoursPanel', () => {
     renderPanel()
 
     expect(await screen.findByText('Opening hours')).toBeInTheDocument()
+    expect(screen.getByText(/1 day open · Mon 09:00–17:00/)).toBeInTheDocument()
     expect(screen.getByLabelText('Monday opening time')).toHaveValue('09:00')
     expect(screen.getByLabelText('Monday closing time')).toHaveValue('17:00')
     expect(screen.getByLabelText('Monday break start')).toHaveValue('12:00')
-    // the other six days are closed
-    expect(screen.getAllByText('Closed')).toHaveLength(6)
+    expect(screen.getAllByText('Closed', { selector: '.hours-closed-badge' })).toHaveLength(6)
   })
 
   it('warns when no days are open', async () => {
     vi.mocked(schedulesApi.getSchedules).mockResolvedValue([])
     renderPanel()
 
+    expect(await screen.findByText(/No days open/)).toBeInTheDocument()
     expect(
-      await screen.findByText(/will show no available times/),
+      screen.getByText(/will show no available times/),
     ).toBeInTheDocument()
   })
 
@@ -54,10 +55,11 @@ describe('OpeningHoursPanel', () => {
     renderPanel()
     await screen.findByLabelText('Monday opening time')
 
-    // open Tuesday with default hours, close Monday
-    const [monday, tuesday] = screen.getAllByRole('checkbox')
-    await user.click(tuesday)
-    await user.click(monday)
+    const toggles = screen.getAllByRole('checkbox')
+    const mondayToggle = toggles[0]
+    const tuesdayToggle = toggles[1]
+    await user.click(tuesdayToggle)
+    await user.click(mondayToggle)
 
     await user.click(
       screen.getByRole('button', { name: 'Save opening hours' }),
@@ -129,5 +131,30 @@ describe('OpeningHoursPanel', () => {
 
     expect(screen.getByLabelText('Monday break start')).toHaveValue('12:00')
     expect(screen.getByLabelText('Monday break end')).toHaveValue('13:00')
+  })
+
+  it('opens Mon–Fri with default hours via preset', async () => {
+    vi.mocked(schedulesApi.getSchedules).mockResolvedValue([])
+    const user = userEvent.setup()
+    renderPanel()
+
+    await screen.findByText(/No days open/)
+    await user.click(screen.getByRole('button', { name: 'Set Mon–Fri' }))
+
+    expect(screen.getByText(/5 days open · Mon–Fri 09:00–17:00/)).toBeInTheDocument()
+    expect(screen.getAllByLabelText(/opening time/)).toHaveLength(5)
+    expect(screen.getAllByText('Closed', { selector: '.hours-closed-badge' })).toHaveLength(2)
+  })
+
+  it('copies Monday hours to Tue–Fri via preset', async () => {
+    const user = userEvent.setup()
+    renderPanel()
+
+    await screen.findByLabelText('Monday opening time')
+    await user.click(screen.getByRole('button', { name: 'Copy Monday' }))
+
+    expect(screen.getByText(/5 days open · Mon–Fri 09:00–17:00/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Wednesday break start')).toHaveValue('12:00')
+    expect(screen.getByLabelText('Friday closing time')).toHaveValue('17:00')
   })
 })
