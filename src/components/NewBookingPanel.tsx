@@ -40,11 +40,25 @@ export function NewBookingPanel({
   businessId,
   token,
   onCreated,
+  onRequestClose,
+  initialPickerDate,
+  embedded = false,
 }: {
   services: Service[]
   businessId: string
   token: string
-  onCreated: () => Promise<void>
+  /** Receives the created booking's start (ISO) so hosts can jump to it. */
+  onCreated: (createdStartIso?: string) => Promise<void>
+  /**
+   * Called when the form is done and its host can close (single booking
+   * created, or a series with nothing skipped). A series with skipped
+   * occurrences never asks to close: the skip report must stay visible.
+   */
+  onRequestClose?: () => void
+  /** Day ('yyyy-MM-dd') the date picker preselects, e.g. the calendar's selected day. */
+  initialPickerDate?: string
+  /** True when rendered inside a modal that provides its own chrome. */
+  embedded?: boolean
 }) {
   const [serviceId, setServiceId] = useState('')
   const [staffId, setStaffId] = useState('')
@@ -206,13 +220,15 @@ export function NewBookingPanel({
           requestedCount: occurrenceCount,
           skipped: result.skipped,
         })
-        await onCreated()
+        await onCreated(offset)
+        if (result.skipped.length === 0) onRequestClose?.()
         return
       }
 
       await bookingsApi.createBooking(businessId, base, token)
       resetForm()
-      await onCreated()
+      await onCreated(offset)
+      onRequestClose?.()
     } catch (err) {
       const message =
         err instanceof ApiClientError ? err.message : 'Failed to create booking.'
@@ -247,10 +263,12 @@ export function NewBookingPanel({
     .join(' · ')
 
   return (
-    <div className="panel">
-      <div className="panel-header">
-        <h3>New booking</h3>
-      </div>
+    <div className={embedded ? 'new-booking-embedded' : 'panel'}>
+      {!embedded && (
+        <div className="panel-header">
+          <h3>New booking</h3>
+        </div>
+      )}
 
       {activeServices.length === 0 ? (
         <div className="empty-state">
@@ -354,6 +372,7 @@ export function NewBookingPanel({
                   value={startDatetime}
                   onChange={setStartDatetime}
                   required
+                  initialDate={initialPickerDate}
                 />
 
                 <RecurrenceFields

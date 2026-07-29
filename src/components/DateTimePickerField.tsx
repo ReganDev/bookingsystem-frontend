@@ -10,12 +10,15 @@ export function DateTimePickerField({
   value,
   onChange,
   required = false,
+  initialDate,
 }: {
   id: string
   label: string
   value: string
   onChange: (value: string) => void
   required?: boolean
+  /** Day ('yyyy-MM-dd') the picker preselects when no value is chosen yet. */
+  initialDate?: string
 }) {
   const [open, setOpen] = useState(false)
   const display = formatDateTimeLabel(value)
@@ -42,6 +45,7 @@ export function DateTimePickerField({
         value={value}
         onClose={() => setOpen(false)}
         onConfirm={onChange}
+        initialDate={initialDate}
       />
     </>
   )
