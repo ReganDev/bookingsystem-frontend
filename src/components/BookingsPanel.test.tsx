@@ -1,17 +1,63 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import type { Booking } from '../types/api'
+import type { Booking, Customer, Page, Service } from '../types/api'
 import * as bookingsApi from '../api/bookings'
+import * as customersApi from '../api/customers'
+import * as usersApi from '../api/users'
 import { BookingsPanel } from './BookingsPanel'
 
 vi.mock('../api/bookings', () => ({
   getBookingsInRange: vi.fn(),
   updateBookingStatus: vi.fn(),
+  createBooking: vi.fn(),
+  createRecurringBookings: vi.fn(),
 }))
+vi.mock('../api/customers')
+vi.mock('../api/users')
 
 const getBookingsInRange = vi.mocked(bookingsApi.getBookingsInRange)
 const updateBookingStatus = vi.mocked(bookingsApi.updateBookingStatus)
+
+const services: Service[] = [
+  {
+    id: 's-1',
+    businessId: 'b-1',
+    name: 'Cut and blow dry',
+    durationMinutes: 45,
+    isActive: true,
+  },
+]
+
+const jane: Customer = {
+  id: 'c-1',
+  businessId: 'b-1',
+  email: 'jane@example.com',
+  firstName: 'Jane',
+  lastName: 'Doe',
+  fullName: 'Jane Doe',
+}
+
+function customerPage(content: Customer[]): Page<Customer> {
+  return {
+    content,
+    totalElements: content.length,
+    totalPages: 1,
+    size: 50,
+    number: 0,
+  }
+}
+
+function renderPanel() {
+  return render(
+    <BookingsPanel
+      businessId="b-1"
+      token="tok"
+      currency="GBP"
+      services={services}
+    />,
+  )
+}
 
 function booking(overrides: Partial<Booking> = {}): Booking {
   return {
@@ -35,6 +81,10 @@ beforeEach(() => {
   vi.resetAllMocks()
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-07-24T12:00:00'))
+  vi.mocked(customersApi.listCustomers).mockResolvedValue(customerPage([jane]))
+  vi.mocked(customersApi.searchCustomers).mockResolvedValue(customerPage([jane]))
+  vi.mocked(usersApi.getStaff).mockResolvedValue([])
+  vi.mocked(bookingsApi.createBooking).mockResolvedValue(booking())
 })
 
 afterEach(() => {
@@ -52,9 +102,7 @@ describe('BookingsPanel', () => {
       }),
     ])
 
-    render(
-      <BookingsPanel businessId="b-1" token="tok" currency="GBP" />,
-    )
+    renderPanel()
 
     expect(await screen.findByText(/Today ·/)).toBeInTheDocument()
     expect(screen.getByText('Cut and blow dry')).toBeInTheDocument()
@@ -73,9 +121,7 @@ describe('BookingsPanel', () => {
       }),
     ])
 
-    render(
-      <BookingsPanel businessId="b-1" token="tok" currency="GBP" />,
-    )
+    renderPanel()
 
     await screen.findByText(/Today ·/)
 
@@ -96,9 +142,7 @@ describe('BookingsPanel', () => {
       booking({ id: 'bk-2', status: 'PENDING', startDatetime: '2026-07-25T10:00:00Z' }),
     ])
 
-    render(
-      <BookingsPanel businessId="b-1" token="tok" currency="GBP" />,
-    )
+    renderPanel()
 
     expect(await screen.findByText(/2 need confirmation/)).toBeInTheDocument()
   })
@@ -114,9 +158,7 @@ describe('BookingsPanel', () => {
       }),
     ])
 
-    render(
-      <BookingsPanel businessId="b-1" token="tok" currency="GBP" />,
-    )
+    renderPanel()
 
     await screen.findByText(/Today ·/)
     await user.click(screen.getByRole('button', { name: 'Pending' }))
@@ -136,9 +178,7 @@ describe('BookingsPanel', () => {
       ])
     updateBookingStatus.mockResolvedValue(booking({ status: 'CONFIRMED' }))
 
-    render(
-      <BookingsPanel businessId="b-1" token="tok" currency="GBP" />,
-    )
+    renderPanel()
 
     await screen.findByText('PENDING')
     await user.click(screen.getByRole('button', { name: 'Confirm' }))
@@ -167,10 +207,10 @@ describe('BookingsPanel', () => {
       }),
     ])
 
-    render(<BookingsPanel businessId="b-1" token="tok" currency="GBP" />)
+    renderPanel()
 
     expect(
-      await screen.findByText(/At: 1 High Street, Manchester, M1 1AE/),
+      await screen.findByText(/Customer address: 1 High Street, Manchester, M1 1AE/),
     ).toBeInTheDocument()
     expect(screen.getByText('7.2 mi · ~18 min drive')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Directions' })).toHaveAttribute(
@@ -189,9 +229,11 @@ describe('BookingsPanel', () => {
       }),
     ])
 
-    render(<BookingsPanel businessId="b-1" token="tok" currency="GBP" />)
+    renderPanel()
 
-    expect(await screen.findByText(/At: 1 High Street/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/Customer address: 1 High Street/),
+    ).toBeInTheDocument()
     expect(screen.queryByText(/mi ·/)).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Directions' })).toBeInTheDocument()
   })
@@ -199,11 +241,165 @@ describe('BookingsPanel', () => {
   it('renders no address block for ordinary bookings', async () => {
     getBookingsInRange.mockResolvedValue([booking()])
 
-    render(<BookingsPanel businessId="b-1" token="tok" currency="GBP" />)
+    renderPanel()
 
     await screen.findByText('Cut and blow dry')
-    expect(screen.queryByText(/^At:/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Customer address:/)).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Directions' })).not.toBeInTheDocument()
+  })
+
+  it('points at the New booking button when the selected day is empty', async () => {
+    getBookingsInRange.mockResolvedValue([])
+
+    renderPanel()
+
+    expect(
+      await screen.findByText(/use the New booking button above/),
+    ).toBeInTheDocument()
+  })
+
+  it('scrolls the day panel into view when a day is tapped on a phone', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const scrollSpy = vi
+      .spyOn(Element.prototype, 'scrollIntoView')
+      .mockImplementation(() => {})
+    const originalMatchMedia = window.matchMedia
+    window.matchMedia = ((query: string) =>
+      ({
+        matches: query.includes('max-width: 768px'),
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }) as unknown as MediaQueryList) as typeof window.matchMedia
+
+    try {
+      getBookingsInRange.mockResolvedValue([
+        booking({ id: 'bk-other', startDatetime: '2026-07-25T14:00:00Z' }),
+      ])
+      renderPanel()
+      await screen.findByText(/Today ·/)
+
+      await user.click(
+        screen.getByRole('button', { name: /Saturday, July 25/ }),
+      )
+
+      expect(scrollSpy).toHaveBeenCalled()
+    } finally {
+      window.matchMedia = originalMatchMedia
+      scrollSpy.mockRestore()
+    }
+  })
+})
+
+describe('new booking from the calendar', () => {
+  beforeEach(() => {
+    getBookingsInRange.mockResolvedValue([])
+  })
+
+  async function openNewBookingDialog(
+    user: ReturnType<typeof userEvent.setup>,
+  ) {
+    renderPanel()
+    await screen.findByText(/Today ·/)
+    await user.click(screen.getByRole('button', { name: 'New booking' }))
+    return await screen.findByRole('dialog', { name: 'New booking' })
+  }
+
+  it('opens the booking form in a dialog from the New booking button', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
+    const dialog = await openNewBookingDialog(user)
+
+    expect(within(dialog).getByLabelText('Service')).toBeInTheDocument()
+    expect(
+      await within(dialog).findByRole('option', { name: /Jane Doe/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('creates a booking for the selected day, closes and refreshes the calendar', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
+    const dialog = await openNewBookingDialog(user)
+    await user.click(await within(dialog).findByRole('option', { name: /Jane Doe/ }))
+    await user.selectOptions(within(dialog).getByLabelText('Service'), 's-1')
+
+    await user.click(within(dialog).getByLabelText('Date & time'))
+    const picker = await screen.findByRole('dialog', { name: 'Pick date & time' })
+    // The picker opens preselected on the calendar's selected day (today).
+    expect(
+      within(picker).getByRole('button', { name: /July 24, 2026|24 July 2026/ }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    await user.click(within(picker).getByRole('button', { name: 'Confirm' }))
+
+    await user.click(within(dialog).getByRole('button', { name: 'Create booking' }))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    expect(bookingsApi.createBooking).toHaveBeenCalledWith(
+      'b-1',
+      expect.objectContaining({ customerId: 'c-1', serviceId: 's-1' }),
+      'tok',
+    )
+    expect(getBookingsInRange).toHaveBeenCalledTimes(2)
+  })
+
+  it('Escape closes the date picker first, then the booking dialog', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
+    const dialog = await openNewBookingDialog(user)
+    await user.click(within(dialog).getByLabelText('Date & time'))
+    await screen.findByRole('dialog', { name: 'Pick date & time' })
+    expect(document.body.style.overflow).toBe('hidden')
+
+    await user.keyboard('{Escape}')
+    expect(
+      screen.queryByRole('dialog', { name: 'Pick date & time' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('dialog', { name: 'New booking' }),
+    ).toBeInTheDocument()
+    expect(document.body.style.overflow).toBe('hidden')
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(document.body.style.overflow).toBe('')
+  })
+
+  it('keeps the dialog open to show the skip report after a clashing series', async () => {
+    vi.mocked(bookingsApi.createRecurringBookings).mockResolvedValue({
+      seriesId: 'sr-1',
+      created: Array.from({ length: 10 }, (_, i) => ({ id: `bk-${i}` }) as Booking),
+      skipped: [
+        { startDatetime: '2026-09-01T09:00:00Z', reason: 'Already booked' },
+      ],
+    })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
+    const dialog = await openNewBookingDialog(user)
+    await user.click(await within(dialog).findByRole('option', { name: /Jane Doe/ }))
+    await user.selectOptions(within(dialog).getByLabelText('Service'), 's-1')
+    await user.click(within(dialog).getByLabelText('Date & time'))
+    const picker = await screen.findByRole('dialog', { name: 'Pick date & time' })
+    await user.click(within(picker).getByRole('button', { name: 'Confirm' }))
+    await user.click(within(dialog).getByLabelText('Repeat this booking'))
+
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Create 12 bookings' }),
+    )
+
+    expect(
+      await screen.findByText(/Created 10 of 12 bookings\./),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('dialog', { name: 'New booking' }),
+    ).toBeInTheDocument()
+    // The calendar behind was still refreshed.
+    expect(getBookingsInRange).toHaveBeenCalledTimes(2)
   })
 })
 

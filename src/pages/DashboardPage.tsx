@@ -3,35 +3,23 @@ import { ApiClientError } from '../api/client'
 import * as bookingsApi from '../api/bookings'
 import * as schedulesApi from '../api/schedules'
 import * as servicesApi from '../api/services'
-import { BookingSettingsPanel } from '../components/BookingSettingsPanel'
 import { BookingsPanel } from '../components/BookingsPanel'
-import { NewBookingPanel } from '../components/NewBookingPanel'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
-import { PhotosPanel } from '../components/PhotosPanel'
+import { SettingsPanel } from '../components/SettingsPanel'
 import { useAuth } from '../context/AuthContext'
 import type { BookingStatus, Business, CancelScope, Service } from '../types/api'
 
-type Tab =
-  | 'bookings'
-  | 'services'
-  | 'opening-hours'
-  | 'new-booking'
-  | 'photos'
-  | 'settings'
+type Tab = 'bookings' | 'services' | 'opening-hours' | 'settings'
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   bookings:
-    'Your schedule at a glance. Pick a day on the calendar to see appointments and confirm or cancel them.',
+    'Your schedule at a glance. Pick a day to see its appointments, or use the New booking button to add one.',
   services:
     'The treatments or appointments customers can book. Each needs a name and how long it takes.',
   'opening-hours':
     'The days and times you accept bookings. Customers can only pick slots inside these hours.',
-  'new-booking':
-    'Add a booking yourself, useful for phone or walk-in customers.',
-  photos:
-    'Photos shown next to your booking form. Upload images to show off your business.',
   settings:
-    'How your bookings behave, like whether new bookings are confirmed automatically.',
+    'How your bookings behave, plus the photos shown on your booking page.',
 }
 
 function formatPrice(price?: number, currency = 'GBP') {
@@ -175,7 +163,7 @@ export function DashboardPage({
           className={`tab ${tab === 'bookings' ? 'active' : ''}`}
           onClick={() => setTab('bookings')}
         >
-          Bookings
+          Calendar
         </button>
         <button
           className={`tab ${tab === 'services' ? 'active' : ''}`}
@@ -188,18 +176,6 @@ export function DashboardPage({
           onClick={() => setTab('opening-hours')}
         >
           Opening hours
-        </button>
-        <button
-          className={`tab ${tab === 'new-booking' ? 'active' : ''}`}
-          onClick={() => setTab('new-booking')}
-        >
-          New booking
-        </button>
-        <button
-          className={`tab ${tab === 'photos' ? 'active' : ''}`}
-          onClick={() => setTab('photos')}
-        >
-          Photos
         </button>
         <button
           className={`tab ${tab === 'settings' ? 'active' : ''}`}
@@ -224,6 +200,7 @@ export function DashboardPage({
               businessId={businessId!}
               token={token!}
               currency={business?.currency}
+              services={services}
               onStatusChange={handleStatusChange}
             />
           )}
@@ -243,22 +220,8 @@ export function DashboardPage({
               onSaved={loadData}
             />
           )}
-          {tab === 'new-booking' && (
-            <NewBookingPanel
-              services={services}
-              businessId={businessId!}
-              token={token!}
-              onCreated={async () => {
-                await loadData()
-                setTab('bookings')
-              }}
-            />
-          )}
-          {tab === 'photos' && (
-            <PhotosPanel businessId={businessId!} token={token!} />
-          )}
           {tab === 'settings' && (
-            <BookingSettingsPanel businessId={businessId!} token={token!} />
+            <SettingsPanel businessId={businessId!} token={token!} />
           )}
         </>
       )}

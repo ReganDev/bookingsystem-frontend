@@ -74,7 +74,7 @@ export function BookingCard({
         </div>
         {address && (
           <p className="booking-card-address">
-            At: {address}
+            Customer address: {address}
             {booking.distanceMeters != null && (
               <>
                 {' · '}

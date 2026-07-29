@@ -1,13 +1,6 @@
 import { WEEKDAY_LABELS, buildMonthCells, dateKey } from '../lib/monthGrid'
 import type { Booking } from '../types/api'
 
-function formatTime(value: string) {
-  return new Date(value).toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 export function MonthCalendar({
   year,
   month,
@@ -17,7 +10,6 @@ export function MonthCalendar({
   onPrevMonth,
   onNextMonth,
   onToday,
-  compact = false,
 }: {
   year: number
   month: number
@@ -27,7 +19,6 @@ export function MonthCalendar({
   onPrevMonth: () => void
   onNextMonth: () => void
   onToday: () => void
-  compact?: boolean
 }) {
   const today = new Date()
   const cells = buildMonthCells(year, month)
@@ -36,10 +27,9 @@ export function MonthCalendar({
     year: 'numeric',
   })
   const todayKey = dateKey(today)
-  const maxChips = compact ? 0 : 3
 
   return (
-    <div className={`month-calendar${compact ? ' month-calendar-compact' : ''}`}>
+    <div className="month-calendar">
       <div className="month-calendar-header">
         <h3 className="month-calendar-title">{monthLabel}</h3>
         <div className="actions-row">
@@ -115,29 +105,9 @@ export function MonthCalendar({
               aria-pressed={isSelected}
             >
               <span className="calendar-day-number">{day.getDate()}</span>
-              {compact ? (
-                dayBookings.length > 0 && (
-                  <span className="calendar-day-dot" aria-hidden="true">
-                    {dayBookings.length}
-                  </span>
-                )
-              ) : (
-                <span className="calendar-day-chips">
-                  {dayBookings.slice(0, maxChips).map((booking) => (
-                    <span
-                      key={booking.id}
-                      className={`calendar-chip chip-${booking.status}`}
-                      title={`${formatTime(booking.startDatetime)} ${booking.service.name}`}
-                    >
-                      {formatTime(booking.startDatetime)}{' '}
-                      {booking.customer.firstName}
-                    </span>
-                  ))}
-                  {dayBookings.length > maxChips && (
-                    <span className="calendar-chip chip-more">
-                      +{dayBookings.length - maxChips}
-                    </span>
-                  )}
+              {dayBookings.length > 0 && (
+                <span className="calendar-day-dot" aria-hidden="true">
+                  {dayBookings.length}
                 </span>
               )}
             </button>
