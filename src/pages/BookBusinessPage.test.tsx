@@ -326,6 +326,142 @@ describe('BookBusinessPage', () => {
   })
 })
 
+describe('mobile-visit services', () => {
+  const mobileCut: Service = {
+    ...haircut,
+    name: 'Mobile haircut',
+    requiresCustomerAddress: true,
+  }
+
+  async function walkToDetails(user: ReturnType<typeof userEvent.setup>) {
+    await screen.findByText('Mobile haircut')
+    await user.click(screen.getByRole('radio'))
+    await chooseDay(user, slotNine)
+    const [firstSlot] = await screen.findAllByRole('button', {
+      name: /\d{1,2}:\d{2}/,
+    })
+    await user.click(firstSlot)
+  }
+
+  beforeEach(() => {
+    vi.mocked(publicApi.getActiveServices).mockResolvedValue([mobileCut])
+  })
+
+  it('collects the address in the guest form and sends it with the code request', async () => {
+    vi.mocked(publicApi.startGuestBooking).mockResolvedValue({
+      bookingSessionId: 'sess-1',
+      expiresAt: new Date(Date.now() + 10 * 60000).toISOString(),
+    })
+
+    const user = userEvent.setup()
+    renderPage()
+
+    // The service picker flags mobile services before anything is chosen
+    await screen.findByText('Mobile haircut')
+    expect(screen.getByText(/Mobile — at your address/)).toBeInTheDocument()
+
+    await walkToDetails(user)
+
+    await user.type(screen.getByLabelText('First name'), 'Gwen')
+    await user.type(screen.getByLabelText('Last name'), 'Guest')
+    await user.type(screen.getByLabelText('Email'), 'gwen@example.com')
+    await user.type(screen.getByLabelText('Address line 1'), ' 1 High Street ')
+    await user.type(screen.getByLabelText('Town or city'), 'Manchester')
+    await user.type(screen.getByLabelText('Postcode'), 'M1 1AE')
+    await user.click(screen.getByRole('button', { name: /email me a code/i }))
+
+    expect(publicApi.startGuestBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        addressLine1: '1 High Street',
+        addressLine2: undefined,
+        addressCity: 'Manchester',
+        addressPostcode: 'M1 1AE',
+      }),
+    )
+  })
+
+  it('collects an editable address for signed-in customers and submits it', async () => {
+    vi.mocked(publicApi.createPublicBooking).mockResolvedValue({
+      id: 'bk-1',
+      businessId: 'b-1',
+      status: 'CONFIRMED',
+      startDatetime: slots[0].startDatetime,
+      endDatetime: slots[0].endDatetime,
+      customer: { id: 'c-1', firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
+      service: { id: 's-1', name: 'Mobile haircut', durationMinutes: 30 },
+      addressLine1: '1 High Street',
+      addressCity: 'Manchester',
+      addressPostcode: 'M1 1AE',
+    } as Booking)
+
+    const user = userEvent.setup()
+    renderPage(true)
+    await walkToDetails(user)
+
+    const line1 = screen.getByLabelText('Address line 1')
+    expect(line1).not.toHaveAttribute('readonly')
+    await user.type(line1, '1 High Street')
+    await user.type(screen.getByLabelText('Town or city'), 'Manchester')
+    await user.type(screen.getByLabelText('Postcode'), 'M1 1AE')
+    await user.click(screen.getByRole('button', { name: 'Request appointment' }))
+
+    await screen.findByText('Thanks, Jane')
+    expect(publicApi.createPublicBooking).toHaveBeenCalledWith(
+      'b-1',
+      expect.objectContaining({
+        addressLine1: '1 High Street',
+        addressCity: 'Manchester',
+        addressPostcode: 'M1 1AE',
+      }),
+      'access-token',
+    )
+    // Confirmation echoes where the visit happens
+    expect(screen.getByText(/We'll come to:/)).toBeInTheDocument()
+    expect(
+      screen.getByText('1 High Street, Manchester, M1 1AE'),
+    ).toBeInTheDocument()
+  })
+
+  it('keeps the address in the draft across a remount', async () => {
+    const user = userEvent.setup()
+    const firstRender = renderPage()
+    await walkToDetails(user)
+
+    await user.type(screen.getByLabelText('Address line 1'), '1 High Street')
+    await user.type(screen.getByLabelText('Town or city'), 'Manchester')
+    await user.type(screen.getByLabelText('Postcode'), 'M1 1AE')
+    await waitFor(() =>
+      expect(
+        sessionStorage.getItem('booking-draft:absolutelyfabuloushairandbeauty'),
+      ).toContain('1 High Street'),
+    )
+    firstRender.unmount()
+
+    renderPage()
+
+    expect(await screen.findByLabelText('Address line 1')).toHaveValue(
+      '1 High Street',
+    )
+    expect(screen.getByLabelText('Postcode')).toHaveValue('M1 1AE')
+  })
+
+  it('shows no address fields for ordinary services', async () => {
+    vi.mocked(publicApi.getActiveServices).mockResolvedValue([haircut])
+
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Haircut')
+    await user.click(screen.getByRole('radio'))
+    await chooseDay(user, slotNine)
+    const [firstSlot] = await screen.findAllByRole('button', {
+      name: /\d{1,2}:\d{2}/,
+    })
+    await user.click(firstSlot)
+
+    expect(screen.queryByLabelText('Address line 1')).not.toBeInTheDocument()
+  })
+})
+
 describe('guest booking with email code', () => {
   it('lets a guest book by entering a 6-digit emailed code', async () => {
     vi.mocked(publicApi.startGuestBooking).mockResolvedValue({

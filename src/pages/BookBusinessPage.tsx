@@ -42,6 +42,15 @@ function formatDayHeading(isoDate: string) {
 
 type Step = 1 | 2 | 3 | 4
 
+type BookingAddress = {
+  line1: string
+  line2: string
+  city: string
+  postcode: string
+}
+
+const EMPTY_ADDRESS: BookingAddress = { line1: '', line2: '', city: '', postcode: '' }
+
 type BookingDraft = {
   step: Step
   serviceId: string
@@ -50,6 +59,8 @@ type BookingDraft = {
   customerNotes: string
   emailReminder: boolean
   smsReminder: boolean
+  /** Absent in drafts saved before mobile-visit services existed. */
+  address?: BookingAddress
 }
 
 const DRAFT_PREFIX = 'booking-draft:'
@@ -78,6 +89,7 @@ export function BookBusinessPage() {
   const [slotsLoading, setSlotsLoading] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState('')
   const [customerNotes, setCustomerNotes] = useState('')
+  const [address, setAddress] = useState<BookingAddress>(EMPTY_ADDRESS)
   const [emailReminder, setEmailReminder] = useState(true)
   const [smsReminder, setSmsReminder] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
@@ -119,6 +131,7 @@ export function BookBusinessPage() {
         setCustomerNotes(draft.customerNotes)
         setEmailReminder(draft.emailReminder)
         setSmsReminder(draft.smsReminder)
+        if (draft.address) setAddress(draft.address)
       }
     } catch {
       sessionStorage.removeItem(`${DRAFT_PREFIX}${slug}`)
@@ -137,6 +150,7 @@ export function BookBusinessPage() {
       customerNotes,
       emailReminder,
       smsReminder,
+      address,
     }
     sessionStorage.setItem(`${DRAFT_PREFIX}${slug}`, JSON.stringify(draft))
   }, [
@@ -150,6 +164,7 @@ export function BookBusinessPage() {
     customerNotes,
     emailReminder,
     smsReminder,
+    address,
   ])
 
   useEffect(() => {
@@ -247,6 +262,20 @@ export function BookBusinessPage() {
     setStep((current) => Math.max(1, current - 1) as Step)
   }
 
+  const needsAddress =
+    services.find((service) => service.id === serviceId)
+      ?.requiresCustomerAddress === true
+
+  function addressPayload() {
+    if (!needsAddress) return {}
+    return {
+      addressLine1: address.line1.trim(),
+      addressLine2: address.line2.trim() || undefined,
+      addressCity: address.city.trim(),
+      addressPostcode: address.postcode.trim(),
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (
@@ -275,6 +304,7 @@ export function BookBusinessPage() {
           customerNotes: customerNotes || undefined,
           emailReminder,
           smsReminder,
+          ...addressPayload(),
         },
         accessToken,
       )
@@ -313,6 +343,7 @@ export function BookBusinessPage() {
         customerNotes: customerNotes || undefined,
         emailReminder,
         smsReminder,
+        ...addressPayload(),
       })
       setOtpSession({ id: session.bookingSessionId, email: customer.email.trim() })
       setOtpCode('')
@@ -407,6 +438,21 @@ export function BookBusinessPage() {
             <strong>{formatDateTime(confirmation.startDatetime)}</strong>{' '}
             {isConfirmed ? 'is booked.' : 'has been sent.'}
           </p>
+          {confirmation.addressLine1 && (
+            <p>
+              We&apos;ll come to:{' '}
+              <strong>
+                {[
+                  confirmation.addressLine1,
+                  confirmation.addressLine2,
+                  confirmation.addressCity,
+                  confirmation.addressPostcode,
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
+              </strong>
+            </p>
+          )}
         </div>
         <p className="confirmation-note">
           {isConfirmed ? (
@@ -445,6 +491,68 @@ export function BookBusinessPage() {
   }
 
   const photos = business.photoUrls ?? []
+
+  // Rendered inside whichever step-4 form is active (only one at a time)
+  const addressSection = needsAddress ? (
+    <div className="form-section">
+      <h4>Your address</h4>
+      <p className="slot-hint">
+        This service takes place at your address — {business.name} will come
+        to you.
+      </p>
+      <div className="form-row">
+        <label htmlFor="addressLine1">Address line 1</label>
+        <input
+          id="addressLine1"
+          autoComplete="address-line1"
+          value={address.line1}
+          onChange={(e) =>
+            setAddress((a) => ({ ...a, line1: e.target.value }))
+          }
+          required
+        />
+      </div>
+      <div className="form-row">
+        <label htmlFor="addressLine2">Address line 2 (optional)</label>
+        <input
+          id="addressLine2"
+          autoComplete="address-line2"
+          value={address.line2}
+          onChange={(e) =>
+            setAddress((a) => ({ ...a, line2: e.target.value }))
+          }
+        />
+      </div>
+      <div className="booking-name-fields">
+        <div className="form-row">
+          <label htmlFor="addressCity">Town or city</label>
+          <input
+            id="addressCity"
+            autoComplete="address-level2"
+            value={address.city}
+            onChange={(e) =>
+              setAddress((a) => ({ ...a, city: e.target.value }))
+            }
+            required
+          />
+        </div>
+        <div className="form-row">
+          <label htmlFor="addressPostcode">Postcode</label>
+          <input
+            id="addressPostcode"
+            autoComplete="postal-code"
+            value={address.postcode}
+            onChange={(e) =>
+              setAddress((a) => ({ ...a, postcode: e.target.value }))
+            }
+            pattern="\s*[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}\s*"
+            title="Enter a valid UK postcode, e.g. SW1A 1AA"
+            required
+          />
+        </div>
+      </div>
+    </div>
+  ) : null
 
   return (
     <div className={`booking-layout ${photos.length > 0 ? '' : 'no-photos'}`}>
@@ -561,6 +669,9 @@ export function BookBusinessPage() {
                         </div>
                         <div className="service-option-meta">
                           <span>{service.durationMinutes} min</span>
+                          {service.requiresCustomerAddress && (
+                            <span>Mobile — at your address</span>
+                          )}
                           <strong>
                             {formatPrice(
                             service.price,
@@ -726,6 +837,8 @@ export function BookBusinessPage() {
                   </div>
                 </section>
 
+                {addressSection}
+
                 {selectedService && selectedSlot && (
                   <div className="booking-summary">
                     <p className="booking-summary-label">Your appointment</p>
@@ -876,6 +989,8 @@ export function BookBusinessPage() {
                       />
                     </div>
                   </section>
+
+                  {addressSection}
 
                   {selectedService && selectedSlot && (
                     <div className="booking-summary">

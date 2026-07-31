@@ -40,11 +40,25 @@ export function NewBookingPanel({
   businessId,
   token,
   onCreated,
+  onRequestClose,
+  initialPickerDate,
+  embedded = false,
 }: {
   services: Service[]
   businessId: string
   token: string
-  onCreated: () => Promise<void>
+  /** Receives the created booking's start (ISO) so hosts can jump to it. */
+  onCreated: (createdStartIso?: string) => Promise<void>
+  /**
+   * Called when the form is done and its host can close (single booking
+   * created, or a series with nothing skipped). A series with skipped
+   * occurrences never asks to close: the skip report must stay visible.
+   */
+  onRequestClose?: () => void
+  /** Day ('yyyy-MM-dd') the date picker preselects, e.g. the calendar's selected day. */
+  initialPickerDate?: string
+  /** True when rendered inside a modal that provides its own chrome. */
+  embedded?: boolean
 }) {
   const [serviceId, setServiceId] = useState('')
   const [staffId, setStaffId] = useState('')
@@ -61,6 +75,13 @@ export function NewBookingPanel({
   const [newCustomer, setNewCustomer] = useState<NewCustomer>(EMPTY_CUSTOMER)
 
   const [staff, setStaff] = useState<StaffMember[]>([])
+
+  const [address, setAddress] = useState({
+    line1: '',
+    line2: '',
+    city: '',
+    postcode: '',
+  })
 
   const [repeats, setRepeats] = useState(false)
   const [recurrenceUnit, setRecurrenceUnit] = useState<RecurrenceUnit>('weeks')
@@ -91,6 +112,7 @@ export function NewBookingPanel({
     setServiceId('')
     setStaffId('')
     setSelectedCustomer(null)
+    setAddress({ line1: '', line2: '', city: '', postcode: '' })
     setRepeats(false)
     setRecurrenceUnit('weeks')
     setRecurrenceInterval(1)
@@ -157,12 +179,22 @@ export function NewBookingPanel({
       const start = new Date(startDatetime)
       const offset = start.toISOString()
 
+      const includeAddress =
+        selectedService?.requiresCustomerAddress && address.line1.trim()
       const base = {
         customerId,
         serviceId,
         staffId: staffId || undefined,
         startDatetime: offset,
         customerNotes: customerNotes || undefined,
+        ...(includeAddress
+          ? {
+              addressLine1: address.line1.trim(),
+              addressLine2: address.line2.trim() || undefined,
+              addressCity: address.city.trim() || undefined,
+              addressPostcode: address.postcode.trim() || undefined,
+            }
+          : {}),
       }
 
       if (repeats) {
@@ -188,13 +220,15 @@ export function NewBookingPanel({
           requestedCount: occurrenceCount,
           skipped: result.skipped,
         })
-        await onCreated()
+        await onCreated(offset)
+        if (result.skipped.length === 0) onRequestClose?.()
         return
       }
 
       await bookingsApi.createBooking(businessId, base, token)
       resetForm()
-      await onCreated()
+      await onCreated(offset)
+      onRequestClose?.()
     } catch (err) {
       const message =
         err instanceof ApiClientError ? err.message : 'Failed to create booking.'
@@ -229,10 +263,12 @@ export function NewBookingPanel({
     .join(' · ')
 
   return (
-    <div className="panel">
-      <div className="panel-header">
-        <h3>New booking</h3>
-      </div>
+    <div className={embedded ? 'new-booking-embedded' : 'panel'}>
+      {!embedded && (
+        <div className="panel-header">
+          <h3>New booking</h3>
+        </div>
+      )}
 
       {activeServices.length === 0 ? (
         <div className="empty-state">
@@ -336,6 +372,7 @@ export function NewBookingPanel({
                   value={startDatetime}
                   onChange={setStartDatetime}
                   required
+                  initialDate={initialPickerDate}
                 />
 
                 <RecurrenceFields
@@ -349,6 +386,52 @@ export function NewBookingPanel({
                   onOccurrenceCountChange={setOccurrenceCount}
                   startDatetime={startDatetime}
                 />
+
+                {selectedService?.requiresCustomerAddress && (
+                  <fieldset className="customer-mode">
+                    <legend>Customer address (optional)</legend>
+                    <div className="form-row">
+                      <label htmlFor="bookingAddressLine1">Address line 1</label>
+                      <input
+                        id="bookingAddressLine1"
+                        value={address.line1}
+                        onChange={(e) =>
+                          setAddress((a) => ({ ...a, line1: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="bookingAddressLine2">Address line 2</label>
+                      <input
+                        id="bookingAddressLine2"
+                        value={address.line2}
+                        onChange={(e) =>
+                          setAddress((a) => ({ ...a, line2: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="bookingAddressCity">Town or city</label>
+                      <input
+                        id="bookingAddressCity"
+                        value={address.city}
+                        onChange={(e) =>
+                          setAddress((a) => ({ ...a, city: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor="bookingAddressPostcode">Postcode</label>
+                      <input
+                        id="bookingAddressPostcode"
+                        value={address.postcode}
+                        onChange={(e) =>
+                          setAddress((a) => ({ ...a, postcode: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </fieldset>
+                )}
 
                 <div className="form-row">
                   <label htmlFor="notes">Notes (optional)</label>

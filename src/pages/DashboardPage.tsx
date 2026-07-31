@@ -3,35 +3,23 @@ import { ApiClientError } from '../api/client'
 import * as bookingsApi from '../api/bookings'
 import * as schedulesApi from '../api/schedules'
 import * as servicesApi from '../api/services'
-import { BookingSettingsPanel } from '../components/BookingSettingsPanel'
 import { BookingsPanel } from '../components/BookingsPanel'
-import { NewBookingPanel } from '../components/NewBookingPanel'
 import { OpeningHoursPanel } from '../components/OpeningHoursPanel'
-import { PhotosPanel } from '../components/PhotosPanel'
+import { SettingsPanel } from '../components/SettingsPanel'
 import { useAuth } from '../context/AuthContext'
 import type { BookingStatus, Business, CancelScope, Service } from '../types/api'
 
-type Tab =
-  | 'bookings'
-  | 'services'
-  | 'opening-hours'
-  | 'new-booking'
-  | 'photos'
-  | 'settings'
+type Tab = 'bookings' | 'services' | 'opening-hours' | 'settings'
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   bookings:
-    'Your schedule at a glance. Pick a day on the calendar to see appointments and confirm or cancel them.',
+    'Your schedule at a glance. Pick a day to see its appointments, or use the New booking button to add one.',
   services:
     'The treatments or appointments customers can book. Each needs a name and how long it takes.',
   'opening-hours':
     'The days and times you accept bookings. Customers can only pick slots inside these hours.',
-  'new-booking':
-    'Add a booking yourself, useful for phone or walk-in customers.',
-  photos:
-    'Photos shown next to your booking form. Upload images to show off your business.',
   settings:
-    'How your bookings behave, like whether new bookings are confirmed automatically.',
+    'How your bookings behave, plus the photos shown on your booking page.',
 }
 
 function formatPrice(price?: number, currency = 'GBP') {
@@ -175,7 +163,7 @@ export function DashboardPage({
           className={`tab ${tab === 'bookings' ? 'active' : ''}`}
           onClick={() => setTab('bookings')}
         >
-          Bookings
+          Calendar
         </button>
         <button
           className={`tab ${tab === 'services' ? 'active' : ''}`}
@@ -188,18 +176,6 @@ export function DashboardPage({
           onClick={() => setTab('opening-hours')}
         >
           Opening hours
-        </button>
-        <button
-          className={`tab ${tab === 'new-booking' ? 'active' : ''}`}
-          onClick={() => setTab('new-booking')}
-        >
-          New booking
-        </button>
-        <button
-          className={`tab ${tab === 'photos' ? 'active' : ''}`}
-          onClick={() => setTab('photos')}
-        >
-          Photos
         </button>
         <button
           className={`tab ${tab === 'settings' ? 'active' : ''}`}
@@ -224,6 +200,7 @@ export function DashboardPage({
               businessId={businessId!}
               token={token!}
               currency={business?.currency}
+              services={services}
               onStatusChange={handleStatusChange}
             />
           )}
@@ -243,22 +220,8 @@ export function DashboardPage({
               onSaved={loadData}
             />
           )}
-          {tab === 'new-booking' && (
-            <NewBookingPanel
-              services={services}
-              businessId={businessId!}
-              token={token!}
-              onCreated={async () => {
-                await loadData()
-                setTab('bookings')
-              }}
-            />
-          )}
-          {tab === 'photos' && (
-            <PhotosPanel businessId={businessId!} token={token!} />
-          )}
           {tab === 'settings' && (
-            <BookingSettingsPanel businessId={businessId!} token={token!} />
+            <SettingsPanel businessId={businessId!} token={token!} />
           )}
         </>
       )}
@@ -286,6 +249,7 @@ function ServicesPanel({
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
   const [isActive, setIsActive] = useState(true)
+  const [requiresCustomerAddress, setRequiresCustomerAddress] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null)
@@ -298,6 +262,7 @@ function ServicesPanel({
     setPrice('')
     setDurationMinutes(30)
     setIsActive(true)
+    setRequiresCustomerAddress(false)
     setShowForm(true)
   }
 
@@ -308,6 +273,7 @@ function ServicesPanel({
     setPrice(service.price != null ? String(service.price) : '')
     setDurationMinutes(service.durationMinutes)
     setIsActive(service.isActive ?? true)
+    setRequiresCustomerAddress(service.requiresCustomerAddress ?? false)
     setShowForm(true)
     setError(null)
   }
@@ -330,6 +296,7 @@ function ServicesPanel({
         price: price ? Number(price) : undefined,
         color: editingService?.color ?? '#3B82F6',
         isActive,
+        requiresCustomerAddress,
       }
 
       if (editingService) {
@@ -430,6 +397,9 @@ function ServicesPanel({
                 {service.isActive === false && (
                   <span className="status-badge status-CANCELLED"> Inactive</span>
                 )}
+                {service.requiresCustomerAddress && (
+                  <span className="status-badge status-CONFIRMED"> Mobile</span>
+                )}
               </div>
               <div className="list-item-meta">
                 {service.durationMinutes} min ·{' '}
@@ -519,6 +489,14 @@ function ServicesPanel({
               onChange={(e) => setIsActive(e.target.checked)}
             />
             Active (visible to customers for new bookings)
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={requiresCustomerAddress}
+              onChange={(e) => setRequiresCustomerAddress(e.target.checked)}
+            />
+            Mobile visit — this service happens at the customer's address
           </label>
           <button className="btn btn-primary" type="submit" disabled={submitting}>
             {submitting

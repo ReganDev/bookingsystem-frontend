@@ -26,6 +26,14 @@ const services: Service[] = [
     durationMinutes: 45,
     isActive: true,
   },
+  {
+    id: 's-2',
+    businessId: 'b-1',
+    name: 'Mobile cut',
+    durationMinutes: 45,
+    isActive: true,
+    requiresCustomerAddress: true,
+  },
 ]
 
 const jane: Customer = {
@@ -56,7 +64,7 @@ function page(content: Customer[]): Page<Customer> {
   }
 }
 
-const onCreated = vi.fn<() => Promise<void>>()
+const onCreated = vi.fn<(createdStartIso?: string) => Promise<void>>()
 
 function renderPanel() {
   return render(
@@ -70,8 +78,11 @@ function renderPanel() {
 }
 
 /** Fills in the service and date/time, which every path needs. */
-async function fillBookingDetails(user: ReturnType<typeof userEvent.setup>) {
-  await user.selectOptions(screen.getByLabelText('Service'), 's-1')
+async function fillBookingDetails(
+  user: ReturnType<typeof userEvent.setup>,
+  serviceId = 's-1',
+) {
+  await user.selectOptions(screen.getByLabelText('Service'), serviceId)
   await user.click(screen.getByLabelText('Date & time'))
   const dialog = await screen.findByRole('dialog')
   const day = within(dialog)
@@ -178,6 +189,55 @@ describe('NewBookingPanel', () => {
       await screen.findByText(/Pick a customer from the list/),
     ).toBeInTheDocument()
     expect(bookingsApi.createBooking).not.toHaveBeenCalled()
+  })
+
+  describe('mobile-visit services', () => {
+    it('hides the address section for ordinary services', async () => {
+      const user = userEvent.setup()
+      renderPanel()
+
+      await user.selectOptions(screen.getByLabelText('Service'), 's-1')
+
+      expect(screen.queryByLabelText('Address line 1')).not.toBeInTheDocument()
+    })
+
+    it('offers an optional address for mobile services and sends it when filled', async () => {
+      const user = userEvent.setup()
+      renderPanel()
+
+      await pickJane(user)
+      await fillBookingDetails(user, 's-2')
+      await user.type(screen.getByLabelText('Address line 1'), '1 High Street')
+      await user.type(screen.getByLabelText('Town or city'), 'Manchester')
+      await user.type(screen.getByLabelText('Postcode'), 'M1 1AE')
+      await user.click(screen.getByRole('button', { name: 'Create booking' }))
+
+      await waitFor(() =>
+        expect(bookingsApi.createBooking).toHaveBeenCalledWith(
+          'b-1',
+          expect.objectContaining({
+            serviceId: 's-2',
+            addressLine1: '1 High Street',
+            addressCity: 'Manchester',
+            addressPostcode: 'M1 1AE',
+          }),
+          'tok',
+        ),
+      )
+    })
+
+    it('leaves the address out entirely when the owner skips it', async () => {
+      const user = userEvent.setup()
+      renderPanel()
+
+      await pickJane(user)
+      await fillBookingDetails(user, 's-2')
+      await user.click(screen.getByRole('button', { name: 'Create booking' }))
+
+      await waitFor(() => expect(bookingsApi.createBooking).toHaveBeenCalled())
+      const payload = vi.mocked(bookingsApi.createBooking).mock.calls[0][1]
+      expect(payload).not.toHaveProperty('addressLine1')
+    })
   })
 
   describe('recurring bookings', () => {
@@ -318,6 +378,103 @@ describe('NewBookingPanel', () => {
           expect.objectContaining({ staffId: undefined }),
           'tok',
         ),
+      )
+    })
+  })
+
+  describe('embedding in a modal', () => {
+    const onRequestClose = vi.fn()
+
+    function renderEmbedded(initialPickerDate?: string) {
+      return render(
+        <NewBookingPanel
+          services={services}
+          businessId="b-1"
+          token="tok"
+          onCreated={onCreated}
+          onRequestClose={onRequestClose}
+          initialPickerDate={initialPickerDate}
+          embedded
+        />,
+      )
+    }
+
+    it('drops the panel chrome so the host dialog provides it', async () => {
+      const { container } = renderEmbedded()
+
+      await screen.findByRole('option', { name: /Jane Doe/ })
+      expect(container.querySelector('.panel')).toBeNull()
+      expect(
+        screen.queryByRole('heading', { name: 'New booking' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('asks to close after a single booking, passing the created start', async () => {
+      const user = userEvent.setup()
+      renderEmbedded()
+
+      await pickJane(user)
+      await fillBookingDetails(user)
+      await user.click(screen.getByRole('button', { name: 'Create booking' }))
+
+      await waitFor(() => expect(onRequestClose).toHaveBeenCalledTimes(1))
+      expect(onCreated).toHaveBeenCalledWith(expect.any(String))
+      const createdStart = onCreated.mock.calls[0][0]
+      expect(Number.isNaN(new Date(createdStart!).getTime())).toBe(false)
+    })
+
+    it('asks to close after a series where nothing was skipped', async () => {
+      const user = userEvent.setup()
+      renderEmbedded()
+
+      await pickJane(user)
+      await fillBookingDetails(user)
+      await user.click(screen.getByLabelText('Repeat this booking'))
+      await user.click(screen.getByRole('button', { name: 'Create 12 bookings' }))
+
+      await waitFor(() => expect(onRequestClose).toHaveBeenCalledTimes(1))
+    })
+
+    it('stays open to show the skip report when occurrences clashed', async () => {
+      vi.mocked(bookingsApi.createRecurringBookings).mockResolvedValue({
+        seriesId: 'sr-1',
+        created: Array.from({ length: 10 }, (_, i) => ({ id: `bk-${i}` }) as Booking),
+        skipped: [
+          { startDatetime: '2026-09-01T09:00:00Z', reason: 'Already booked' },
+          { startDatetime: '2026-09-29T09:00:00Z', reason: 'Already booked' },
+        ],
+      } satisfies RecurringBookingResponse)
+
+      const user = userEvent.setup()
+      renderEmbedded()
+
+      await pickJane(user)
+      await fillBookingDetails(user)
+      await user.click(screen.getByLabelText('Repeat this booking'))
+      await user.click(screen.getByRole('button', { name: 'Create 12 bookings' }))
+
+      expect(
+        await screen.findByText(/Created 10 of 12 bookings\./),
+      ).toBeInTheDocument()
+      expect(onRequestClose).not.toHaveBeenCalled()
+      expect(onCreated).toHaveBeenCalled()
+    })
+
+    it('opens the date picker anchored on the given initial date', async () => {
+      const user = userEvent.setup()
+      renderEmbedded('2026-08-12')
+
+      await user.click(screen.getByLabelText('Date & time'))
+      const dialog = await screen.findByRole('dialog')
+
+      expect(within(dialog).getByText('August 2026')).toBeInTheDocument()
+      const preselected = within(dialog).getByRole('button', {
+        name: /12 August 2026|August 12, 2026/,
+      })
+      expect(preselected).toHaveAttribute('aria-pressed', 'true')
+      // Confirm still needs an explicit click; nothing was submitted for them.
+      expect(screen.getByLabelText('Date & time')).toHaveTextContent(
+        'Select date & time',
       )
     })
   })

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useModalStack } from '../lib/modalStack'
 import {
   WEEKDAY_LABELS,
   buildMonthCells,
@@ -46,6 +47,8 @@ type DateTimePickerModalProps = {
   value: string
   onClose: () => void
   onConfirm: (value: string) => void
+  /** Day ('yyyy-MM-dd') to preselect when no value has been picked yet. */
+  initialDate?: string
 }
 
 export function DateTimePickerModal({
@@ -53,46 +56,36 @@ export function DateTimePickerModal({
   value,
   onClose,
   onConfirm,
+  initialDate,
 }: DateTimePickerModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const today = useMemo(() => new Date(), [])
   const parsed = parseDateTime(value)
 
-  const initialDate = parsed.date
-    ? new Date(`${parsed.date}T12:00:00`)
-    : today
+  const anchorDay = parsed.date || initialDate || ''
+  const initialAnchor = anchorDay ? new Date(`${anchorDay}T12:00:00`) : today
 
-  const [year, setYear] = useState(initialDate.getFullYear())
-  const [month, setMonth] = useState(initialDate.getMonth())
-  const [selectedDate, setSelectedDate] = useState(parsed.date)
+  const [year, setYear] = useState(initialAnchor.getFullYear())
+  const [month, setMonth] = useState(initialAnchor.getMonth())
+  const [selectedDate, setSelectedDate] = useState(anchorDay)
   const [selectedTime, setSelectedTime] = useState(parsed.time)
 
   useEffect(() => {
     if (!open) return
     const next = parseDateTime(value)
-    const anchor = next.date ? new Date(`${next.date}T12:00:00`) : today
+    const fallbackDate = next.date || initialDate || ''
+    const anchor = fallbackDate ? new Date(`${fallbackDate}T12:00:00`) : today
     setYear(anchor.getFullYear())
     setMonth(anchor.getMonth())
-    setSelectedDate(next.date)
+    setSelectedDate(fallbackDate)
     setSelectedTime(next.time)
-  }, [open, value, today])
+  }, [open, value, initialDate, today])
+
+  useModalStack(open, onClose)
 
   useEffect(() => {
-    if (!open) return
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    document.body.style.overflow = 'hidden'
-    dialogRef.current?.focus()
-
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = ''
-    }
-  }, [open, onClose])
+    if (open) dialogRef.current?.focus()
+  }, [open])
 
   if (!open) return null
 

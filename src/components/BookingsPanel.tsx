@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiClientError } from '../api/client'
 import * as bookingsApi from '../api/bookings'
-import { buildMonthCells, dateKey } from '../lib/monthGrid'
+import { buildMonthCells, dateKey, toISODate } from '../lib/monthGrid'
 import { groupBookingsByDay } from '../lib/groupBookingsByDay'
 import { BookingCard } from './BookingCard'
 import { MonthCalendar } from './MonthCalendar'
-import type { Booking, BookingStatus, CancelScope } from '../types/api'
+import { NewBookingModal } from './NewBookingModal'
+import type { Booking, BookingStatus, CancelScope, Service } from '../types/api'
 
 type DayFilter = 'all' | 'pending'
 
@@ -24,11 +25,13 @@ export function BookingsPanel({
   businessId,
   token,
   currency,
+  services,
   onStatusChange,
 }: {
   businessId: string
   token: string
   currency?: string
+  services: Service[]
   onStatusChange?: (
     bookingId: string,
     status: BookingStatus,
@@ -43,6 +46,8 @@ export function BookingsPanel({
   const [dayFilter, setDayFilter] = useState<DayFilter>('all')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showNewBooking, setShowNewBooking] = useState(false)
+  const dayPanelRef = useRef<HTMLElement>(null)
 
   const loadMonth = useCallback(async () => {
     setLoading(true)
@@ -102,6 +107,43 @@ export function BookingsPanel({
     setSelectedDay(today)
   }
 
+  function handleSelectDay(day: Date) {
+    setSelectedDay(day)
+    // On phones the day list sits below the calendar; without this a tap
+    // appears to do nothing because the update happens off-screen.
+    if (window.matchMedia?.('(max-width: 768px)').matches) {
+      dayPanelRef.current?.scrollIntoView({
+        block: 'start',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'auto'
+          : 'smooth',
+      })
+    }
+  }
+
+  async function handleCreated(createdStartIso?: string) {
+    if (!createdStartIso) {
+      await loadMonth()
+      return
+    }
+    const created = new Date(createdStartIso)
+    setSelectedDay(created)
+    if (created.getFullYear() === year && created.getMonth() === month) {
+      await loadMonth()
+    } else {
+      // Changing year/month re-runs loadMonth via its effect; calling it
+      // directly here would fetch the old month from the stale closure.
+      setYear(created.getFullYear())
+      setMonth(created.getMonth())
+    }
+  }
+
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  )
+
   async function handleStatusChange(
     bookingId: string,
     status: BookingStatus,
@@ -143,6 +185,17 @@ export function BookingsPanel({
 
   return (
     <div className="panel bookings-panel">
+      <div className="panel-header">
+        <h3>Calendar</h3>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setShowNewBooking(true)}
+        >
+          New booking
+        </button>
+      </div>
+
       <div className="bookings-summary" aria-live="polite">
         {summaryParts.join(' · ')}
       </div>
@@ -156,15 +209,18 @@ export function BookingsPanel({
             month={month}
             bookingsByDay={bookingsByDay}
             selectedDay={selectedDay}
-            onSelectDay={setSelectedDay}
+            onSelectDay={handleSelectDay}
             onPrevMonth={() => changeMonth(-1)}
             onNextMonth={() => changeMonth(1)}
             onToday={goToToday}
-            compact
           />
         </aside>
 
-        <section className="bookings-day-panel" aria-labelledby="bookings-day-heading">
+        <section
+          ref={dayPanelRef}
+          className="bookings-day-panel"
+          aria-labelledby="bookings-day-heading"
+        >
           <header className="bookings-day-header">
             <h3 id="bookings-day-heading">{formatDayHeading(selectedDay)}</h3>
             <div className="bookings-day-filters" role="group" aria-label="Filter bookings">
@@ -195,7 +251,7 @@ export function BookingsPanel({
               <p>
                 {dayFilter === 'pending'
                   ? 'Nothing waiting for confirmation on this day.'
-                  : 'Select another day on the calendar or add a booking in the New booking tab.'}
+                  : 'Select another day on the calendar, or use the New booking button above to add one.'}
               </p>
             </div>
           ) : (
@@ -212,6 +268,19 @@ export function BookingsPanel({
           )}
         </section>
       </div>
+
+      {showNewBooking && (
+        <NewBookingModal
+          businessId={businessId}
+          token={token}
+          services={services}
+          initialPickerDate={
+            selectedDay >= startOfToday ? toISODate(selectedDay) : undefined
+          }
+          onCreated={handleCreated}
+          onClose={() => setShowNewBooking(false)}
+        />
+      )}
     </div>
   )
 }

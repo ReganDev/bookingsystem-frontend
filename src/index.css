@@ -495,6 +495,41 @@ button {
   border-top: 1px solid var(--color-border);
 }
 
+/* Wide enough for the two-column booking form, whose own breakpoint is
+   viewport-based, so the columns still collapse on small screens. */
+.new-booking-modal {
+  width: min(100%, 60rem);
+}
+
+.new-booking-embedded {
+  padding: 1.25rem;
+}
+
+@media (max-width: 700px) {
+  .modal-backdrop {
+    padding: 0.5rem;
+  }
+
+  /* dvh so a phone's collapsing URL bar can't hide the footer buttons. */
+  .modal-dialog {
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .new-booking-embedded {
+    padding: 1rem;
+  }
+
+  /* Keep the submit button reachable: the form is taller than a phone
+     screen, so a static footer leaves the primary action below the fold. */
+  .new-booking-embedded .booking-form-footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: 1rem;
+    padding-bottom: 0.75rem;
+    background: var(--color-surface);
+  }
+}
+
 .datetime-picker-body {
   display: grid;
   gap: 1.25rem;
@@ -1948,7 +1983,7 @@ button {
 
 .bookings-split {
   display: grid;
-  grid-template-columns: minmax(14rem, 18rem) 1fr;
+  grid-template-columns: minmax(16rem, 22rem) 1fr;
   gap: 1.25rem;
   align-items: start;
 }
@@ -1972,16 +2007,12 @@ button {
   font-size: 1rem;
 }
 
-.month-calendar-compact .booking-calendar-grid .calendar-day {
+.month-calendar .calendar-day {
   min-height: 2.75rem;
   padding: 0.25rem;
   align-items: center;
   justify-content: center;
   position: relative;
-}
-
-.month-calendar-compact .calendar-day-chips {
-  display: none;
 }
 
 .calendar-day-dot {
@@ -2055,6 +2086,13 @@ button {
   color: var(--color-primary);
 }
 
+.settings-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
 .bookings-day-list {
   display: grid;
   gap: 0.75rem;
@@ -2117,15 +2155,21 @@ button {
   color: var(--color-fg-muted);
 }
 
+.booking-card-address {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-fg-muted);
+}
+
 @media (max-width: 768px) {
   .bookings-split {
     grid-template-columns: 1fr;
   }
 
+  /* No inner scroller here: a nested scroll region next to the page scroll
+     is the worst way to hand a month grid to a thumb. */
   .bookings-sidebar {
     position: static;
-    max-height: 20rem;
-    overflow: auto;
   }
 
   .booking-card {
@@ -2199,45 +2243,6 @@ button {
   place-items: center;
 }
 
-.calendar-day-chips {
-  display: grid;
-  gap: 2px;
-  overflow: hidden;
-}
-
-.calendar-chip {
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 0.1rem 0.3rem;
-  border-radius: 4px;
-  background: var(--color-primary-soft);
-  color: #065f46;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.calendar-chip.chip-CANCELLED {
-  background: var(--color-danger-soft);
-  color: #991b1b;
-  text-decoration: line-through;
-}
-
-.calendar-chip.chip-COMPLETED {
-  background: #ccfbf1;
-  color: #115e59;
-}
-
-.calendar-chip.chip-PENDING {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.calendar-chip.chip-more {
-  background: transparent;
-  color: var(--color-fg-subtle);
-}
-
 .calendar-day-detail {
   margin-top: 1.25rem;
   padding-top: 1.25rem;
@@ -2249,20 +2254,181 @@ button {
 }
 
 @media (max-width: 700px) {
-  .calendar-day {
+  /* Matches the specificity of the base .month-calendar rule above, which
+     would otherwise win and keep phone cells at the desktop 2.75rem. */
+  .month-calendar .calendar-day {
     min-height: 56px;
-  }
-
-  .calendar-day-chips {
-    display: none;
   }
 
   .calendar-day.has-bookings .calendar-day-number {
     background: var(--color-primary-soft);
   }
+
+  /* The month nav uses .btn-sm, which the global 44px floor exempts. */
+  .month-calendar-header .btn,
+  .booking-calendar-header .btn {
+    min-height: 44px;
+    min-width: 2.75rem;
+  }
+
+  .filter-pill {
+    min-height: 2.5rem;
+    padding-inline: 0.85rem;
+  }
+
+  .bookings-day-panel {
+    scroll-margin-top: 0.5rem;
+  }
 }
 
 /* ---------- Opening hours ---------- */
+
+.hours-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.hours-summary {
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.hours-presets {
+  margin-top: -0.25rem;
+}
+
+.hours-week-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hours-day-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  transition: border-color 0.15s ease;
+}
+
+.hours-day-card:hover {
+  border-color: var(--color-border-strong);
+}
+
+.hours-day-card.is-open {
+  background: var(--color-surface);
+}
+
+.hours-day-card.is-closed {
+  background: var(--color-bg);
+}
+
+.hours-day-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.hours-day-name {
+  min-width: 6.5rem;
+  font-weight: 700;
+}
+
+.hours-day-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-fg-muted);
+}
+
+.hours-day-toggle input {
+  flex: none;
+}
+
+.hours-day-times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.hours-time-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.hours-time-separator {
+  align-self: end;
+  padding-bottom: 0.55rem;
+  color: var(--color-fg-subtle);
+  font-weight: 600;
+}
+
+.hours-closed-badge {
+  margin-left: auto;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-fg-subtle);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.hours-break-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.hours-break-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem 0.75rem;
+}
+
+.hours-break-label {
+  min-width: 4.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-fg-muted);
+}
+
+.hours-footer {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .hours-day-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hours-day-times,
+  .hours-closed-badge {
+    margin-left: 0;
+  }
+
+  .hours-break-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
 
 .schedule-grid {
   display: grid;
@@ -2330,6 +2496,14 @@ button {
 
   .app-main {
     padding: 1rem;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  .tab {
+    padding: 0.5rem 0.85rem;
   }
 
   .card {

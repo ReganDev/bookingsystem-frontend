@@ -134,6 +134,8 @@ export interface Service {
   color?: string
   displayOrder?: number
   isActive: boolean
+  /** Mobile visit: the service happens at the customer's address. */
+  requiresCustomerAddress?: boolean
 }
 
 export interface ServiceRequest {
@@ -144,6 +146,7 @@ export interface ServiceRequest {
   color?: string
   displayOrder?: number
   isActive?: boolean
+  requiresCustomerAddress?: boolean
 }
 
 export interface Customer {
@@ -196,6 +199,14 @@ export interface Booking {
   }
   /** Present when this booking is one occurrence of a standing appointment. */
   seriesId?: string
+  /** Customer address, present on mobile-visit bookings. */
+  addressLine1?: string
+  addressLine2?: string
+  addressCity?: string
+  addressPostcode?: string
+  /** Driving distance from the business; filled in asynchronously, may be absent. */
+  distanceMeters?: number
+  durationSeconds?: number
 }
 
 export interface BookingRequest {
@@ -205,6 +216,10 @@ export interface BookingRequest {
   startDatetime: string
   customerNotes?: string
   internalNotes?: string
+  addressLine1?: string
+  addressLine2?: string
+  addressCity?: string
+  addressPostcode?: string
 }
 
 /** MONTHLY means the same weekday of the month ("2nd Tuesday"), not the same date. */
@@ -250,6 +265,10 @@ export interface PublicBookingRequest {
   customerNotes?: string
   emailReminder?: boolean
   smsReminder?: boolean
+  addressLine1?: string
+  addressLine2?: string
+  addressCity?: string
+  addressPostcode?: string
 }
 
 export interface Page<T> {
@@ -280,6 +299,10 @@ export type GuestBookingStartRequest = {
   customerNotes?: string
   emailReminder: boolean
   smsReminder: boolean
+  addressLine1?: string
+  addressLine2?: string
+  addressCity?: string
+  addressPostcode?: string
 }
 
 export type GuestBookingStartResponse = {
