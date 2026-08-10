@@ -1,7 +1,7 @@
 /**
  * Client websites link to the booking app as `https://<host>/#<business-slug>`
- * (e.g. dashBook/#absolutelyfabuloushairandbeauty). Translate that hash into
- * the in-app route for the business booking page.
+ * (e.g. app.bookingbase.co.uk/#absolutelyfabuloushairandbeauty). Translate that
+ * hash into the in-app route for the business booking page.
  *
  * Returns null when the hash is empty or doesn't look like a business slug.
  */

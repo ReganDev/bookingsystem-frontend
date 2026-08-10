@@ -18,6 +18,17 @@ npm run dev
 
 The app runs at http://localhost:5173 and proxies API requests to the backend.
 
+## Deployment
+
+The dashboard is served at `https://app.bookingbase.co.uk`. It calls the API
+with relative `/api/v1/...` paths, and `vercel.json` rewrites `/api/*` to the
+Railway backend, so the browser never makes a cross-origin request. That
+destination must stay the Railway origin hostname — pointing it at
+`app.bookingbase.co.uk` would make Vercel rewrite to itself and loop.
+
+The marketing site is a separate repo (`booking-landing-page`) at
+`https://bookingbase.co.uk`.
+
 ## Features
 
 - Register a new business account
