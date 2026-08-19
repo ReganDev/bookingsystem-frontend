@@ -1,0 +1,442 @@
+import { Link } from 'react-router-dom'
+import {
+  PRIVACY_SECTIONS,
+  hasUnfilledDetails,
+  privacyDetails,
+  providers,
+  retentionPeriods,
+  unfilledDetailKeys,
+} from '../content/privacyPolicy'
+
+const {
+  serviceName,
+  appDomain,
+  legalEntity,
+  companyNumber,
+  registeredAddress,
+  privacyEmail,
+  icoRegistrationNumber,
+  lastUpdated,
+} = privacyDetails
+
+export function PrivacyPolicyPage() {
+  return (
+    <article className="card policy-page">
+      {hasUnfilledDetails() && (
+        <p className="policy-warning" role="status">
+          This policy is not ready to publish. Fill in{' '}
+          <code>{unfilledDetailKeys().join(', ')}</code> in{' '}
+          <code>src/content/privacyPolicy.ts</code>.
+        </p>
+      )}
+
+      <header className="policy-header">
+        <h2>Privacy policy</h2>
+        <p className="policy-updated">Last updated: {lastUpdated}</p>
+        <p>
+          This policy explains what {serviceName} does with personal
+          information, and what rights you have over it. It covers both the
+          businesses that use {serviceName} to take bookings, and the customers
+          who book with them at {appDomain}.
+        </p>
+      </header>
+
+      <nav className="policy-contents" aria-label="Sections of this policy">
+        <h3>Contents</h3>
+        <ol>
+          {PRIVACY_SECTIONS.map((section) => (
+            <li key={section.id}>
+              <a href={`#${section.id}`}>{section.title}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+
+      <section id="who-we-are" className="policy-section">
+        <h3>Who we are</h3>
+        <p>
+          {serviceName} is booking software operated by {legalEntity}
+          {companyNumber ? `, registered in England and Wales under company number ${companyNumber}` : ''}
+          . Our address is {registeredAddress}.
+        </p>
+        <p>
+          For anything to do with your personal information, email us at{' '}
+          <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
+        </p>
+        {icoRegistrationNumber && (
+          <p>
+            We are registered with the Information Commissioner&apos;s Office
+            (ICO), registration number {icoRegistrationNumber}.
+          </p>
+        )}
+      </section>
+
+      <section id="our-roles" className="policy-section">
+        <h3>Our two roles</h3>
+        <p>
+          Data protection law distinguishes between the organisation that
+          decides how personal information is used (the <strong>controller</strong>)
+          and one that handles it on that organisation&apos;s behalf (the{' '}
+          <strong>processor</strong>). {serviceName} is both, depending on whose
+          information it is.
+        </p>
+        <p>
+          <strong>We are the controller</strong> for the accounts businesses and
+          customers create with us, for enquiries sent through our contact form,
+          and for keeping the service running and secure.
+        </p>
+        <p>
+          <strong>We are the processor</strong> for the customer and booking
+          records a business keeps in {serviceName}. That business decides what
+          to record and how long to keep it; we only act on its instructions. If
+          you booked an appointment and want your details changed or removed,
+          contact the business you booked with first. You can also contact us
+          and we will help.
+        </p>
+      </section>
+
+      <section id="what-we-collect" className="policy-section">
+        <h3>What information we collect</h3>
+        <p>If you create an account, we collect:</p>
+        <ul>
+          <li>your first and last name</li>
+          <li>your email address</li>
+          <li>your phone number, if you give us one</li>
+          <li>your password, which we store only as an encrypted hash</li>
+          <li>your business name and contact details, if you run a business</li>
+        </ul>
+        <p>If you book an appointment, the business you book with collects:</p>
+        <ul>
+          <li>your name, email address and phone number</li>
+          <li>the service, date and time you booked, and the price</li>
+          <li>any notes you add to your booking</li>
+          <li>
+            <strong>your address and postcode</strong>, but only when the
+            service takes place at your address rather than at the
+            business&apos;s premises
+          </li>
+          <li>
+            the driving distance and travel time between the business and that
+            address, worked out from postcodes
+          </li>
+          <li>whether you asked for a reminder</li>
+        </ul>
+        <p>
+          Reminders are sent by email. We do not send text messages, and your
+          phone number is not shared with any messaging service. If you tick the
+          text reminder option, we record only that you would like one.
+        </p>
+        <p>
+          If you book without an account, we hold your details for up to 10
+          minutes while you confirm the code we email you. If you never confirm,
+          those details expire unused.
+        </p>
+        <p>
+          Businesses can also add notes about their customers, and upload photos
+          of their premises and work.
+        </p>
+        <p>
+          If you send us an enquiry, we collect your name, email address,
+          business name if you give one, and your message.
+        </p>
+      </section>
+
+      <section id="lawful-basis" className="policy-section">
+        <h3>Why we collect it, and our lawful basis</h3>
+        <ul>
+          <li>
+            <strong>To provide the service you asked for</strong> — creating
+            your account, taking and managing your bookings, and letting you
+            sign in. Lawful basis: <em>performance of a contract</em>.
+          </li>
+          <li>
+            <strong>To send you a reminder or confirmation</strong> when you ask
+            for one. Lawful basis: <em>consent</em>, which you can withdraw at
+            any time.
+          </li>
+          <li>
+            <strong>To keep the service running, secure and free of abuse</strong>{' '}
+            — verifying email addresses, limiting repeated attempts, and keeping
+            server logs. Lawful basis: <em>legitimate interests</em>, namely
+            running a functioning and secure service.
+          </li>
+          <li>
+            <strong>To reply to your enquiry.</strong> Lawful basis:{' '}
+            <em>legitimate interests</em>, namely responding to someone who
+            contacted us.
+          </li>
+          <li>
+            <strong>To keep records we are legally required to keep</strong>,
+            such as records relevant to tax. Lawful basis:{' '}
+            <em>legal obligation</em>.
+          </li>
+        </ul>
+      </section>
+
+      <section id="how-we-use-it" className="policy-section">
+        <h3>How we use your information</h3>
+        <p>
+          We use it to run the booking service and nothing else. We do not sell
+          it, rent it, or share it for anyone&apos;s marketing. We do not build
+          advertising profiles, and we do not make any decision about you by
+          automated means.
+        </p>
+        <p>
+          We do not take payments through {serviceName}. Prices are recorded so
+          a business can see what a booking is worth, but you pay the business
+          directly, outside this service.
+        </p>
+      </section>
+
+      <section id="sharing" className="policy-section">
+        <h3>Who we share it with</h3>
+        <ul>
+          <li>
+            <strong>The business you booked with</strong> receives the details
+            of your booking. That is the point of making one.
+          </li>
+          <li>
+            <strong>Our service providers</strong>, listed in the next section,
+            handle information on our behalf under contract.
+          </li>
+          <li>
+            <strong>A small number of our own staff</strong> can access accounts
+            to provide support and keep the service running.
+          </li>
+          <li>
+            <strong>Authorities or advisers</strong>, where the law requires it
+            or to establish or defend a legal claim.
+          </li>
+        </ul>
+      </section>
+
+      <section id="providers" className="policy-section">
+        <h3>Third-party service providers</h3>
+        <p>
+          We use trusted providers to operate {serviceName}. They process
+          personal information on our behalf and may not use it for their own
+          purposes.
+        </p>
+        <dl className="policy-providers">
+          {providers.map((provider) => (
+            <div key={provider.name} className="policy-provider">
+              <dt>{provider.name}</dt>
+              <dd>
+                <p>{provider.purpose}.</p>
+                <p className="policy-provider-meta">
+                  Receives: {provider.receives}. Processed in:{' '}
+                  {provider.location}.
+                </p>
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p>
+          Two of these deserve a note. Postcode lookup and distance calculation
+          use free public services: the postcode service receives a postcode on
+          its own, and the routing service receives{' '}
+          <strong>coordinates only</strong> — never a name, address or booking
+          detail. The routing service is a public demo server we have no
+          contract with, which is why we send it nothing that identifies anyone.
+        </p>
+        <p>
+          If we add a provider in future — for example a text-message service or
+          a payment provider — we will update this list before it handles any of
+          your information.
+        </p>
+      </section>
+
+      <section id="transfers" className="policy-section">
+        <h3>Where your information is processed</h3>
+        <p>
+          Some of our providers are based outside the UK, mainly in the United
+          States and the European Economic Area, as set out above. Where
+          information leaves the UK, we rely on the UK Government&apos;s
+          adequacy regulations, or on the International Data Transfer Agreement
+          or Addendum approved by the ICO, so that your information keeps
+          essentially the same protection it has here.
+        </p>
+      </section>
+
+      <section id="retention" className="policy-section">
+        <h3>How long we keep it</h3>
+        <p>
+          We keep personal information only as long as we need it for the
+          purposes above.
+        </p>
+        <dl className="policy-retention">
+          {retentionPeriods.map((entry) => (
+            <div key={entry.category} className="policy-retention-row">
+              <dt>{entry.category}</dt>
+              <dd>{entry.period}</dd>
+            </div>
+          ))}
+        </dl>
+        <p>
+          Where a business is the controller of its own customer records, that
+          business sets the retention period and can delete records at any time.
+        </p>
+      </section>
+
+      <section id="security" className="policy-section">
+        <h3>How we keep it secure</h3>
+        <ul>
+          <li>
+            Everything you send travels over an encrypted HTTPS connection.
+          </li>
+          <li>
+            Passwords are stored as one-way encrypted hashes. Nobody at{' '}
+            {serviceName} can read your password.
+          </li>
+          <li>
+            Signing in issues a short-lived access token that expires after 15
+            minutes, alongside a refresh token that lasts 7 days.
+          </li>
+          <li>
+            Accounts must verify their email address before they can be used,
+            and booking without an account requires a code sent to your email.
+          </li>
+          <li>
+            Businesses can only see their own customers and bookings. Our
+            database sits behind the service and is not reachable from your
+            browser.
+          </li>
+        </ul>
+        <p>
+          No service can promise perfect security, but we take these measures
+          seriously and review them as the service grows.
+        </p>
+      </section>
+
+      <section id="cookies" className="policy-section">
+        <h3>Cookies and browser storage</h3>
+        <p>
+          We use <strong>no analytics</strong>, no advertising, no tag manager
+          and no tracking cookies. Nothing here follows you between websites,
+          which is why you were not asked to accept cookies.
+        </p>
+        <p>
+          When you sign in, we store your session in your browser&apos;s local
+          storage so you stay signed in. It is strictly necessary to provide a
+          service you asked for, and signing out removes it. Clearing your
+          browser data removes it too.
+        </p>
+        <p>
+          The typefaces on this site load from Google Fonts, which receives your
+          IP address as part of that request.
+        </p>
+      </section>
+
+      <section id="rights" className="policy-section">
+        <h3>Your data protection rights</h3>
+        <p>Under UK data protection law you have the right to:</p>
+        <ul>
+          <li>
+            <strong>be informed</strong> about how your information is used —
+            which is what this policy is for
+          </li>
+          <li>
+            <strong>access</strong> a copy of the information we hold about you
+          </li>
+          <li>
+            <strong>rectification</strong> — have inaccurate information
+            corrected
+          </li>
+          <li>
+            <strong>erasure</strong> — ask us to delete your information, where
+            we have no overriding reason to keep it
+          </li>
+          <li>
+            <strong>restrict processing</strong> — ask us to pause using your
+            information while a concern is resolved
+          </li>
+          <li>
+            <strong>data portability</strong> — receive your information in a
+            portable format
+          </li>
+          <li>
+            <strong>object</strong> to processing we base on legitimate
+            interests
+          </li>
+          <li>
+            <strong>rights around automated decisions</strong> — though we make
+            none
+          </li>
+        </ul>
+        <p>Exercising these rights is free, and we will not treat you differently for it.</p>
+      </section>
+
+      <section id="exercising-rights" className="policy-section">
+        <h3>Getting a copy of your data, or deleting it</h3>
+        <p>
+          Email <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a> and tell us
+          what you would like. We may ask you to confirm your identity so we do
+          not hand your information to someone else. We will respond within one
+          month, and will tell you if we need longer because the request is
+          complex.
+        </p>
+        <p>
+          If your request is about a booking you made with a business, contact
+          that business first — they control those records. Tell us if you
+          cannot reach them and we will help.
+        </p>
+      </section>
+
+      <section id="withdrawing-consent" className="policy-section">
+        <h3>Withdrawing your consent</h3>
+        <p>
+          Where we rely on your consent — currently only for booking reminders —
+          you can withdraw it at any time by changing the reminder option on a
+          booking, or by emailing{' '}
+          <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>. Withdrawing
+          consent does not affect anything done before you withdrew it, and does
+          not affect messages we must send to operate your booking, such as
+          confirming it.
+        </p>
+      </section>
+
+      <section id="complaints" className="policy-section">
+        <h3>How to complain</h3>
+        <p>
+          If you are unhappy with how we have handled your information, please
+          tell us first at{' '}
+          <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a> so we can put it
+          right.
+        </p>
+        <p>
+          You also have the right to complain to the Information
+          Commissioner&apos;s Office, the UK regulator for data protection:
+        </p>
+        <ul>
+          <li>
+            <a
+              href="https://ico.org.uk/make-a-complaint/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              ico.org.uk/make-a-complaint
+            </a>
+          </li>
+          <li>Helpline: 0303 123 1113</li>
+          <li>
+            Information Commissioner&apos;s Office, Wycliffe House, Water Lane,
+            Wilmslow, Cheshire SK9 5AF
+          </li>
+        </ul>
+      </section>
+
+      <section id="changes" className="policy-section">
+        <h3>Changes to this policy</h3>
+        <p>
+          We update this policy when the service changes. The date at the top
+          shows when it last changed. If a change materially affects how we use
+          your information, we will tell account holders by email.
+        </p>
+        <p className="policy-back">
+          <Link to="/book">Back to booking</Link> ·{' '}
+          <Link to="/contact">Contact us</Link>
+        </p>
+      </section>
+    </article>
+  )
+}
