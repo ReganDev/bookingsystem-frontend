@@ -262,6 +262,22 @@ export function BookBusinessPage() {
     setStep((current) => Math.max(1, current - 1) as Step)
   }
 
+  /** Clears the finished booking so the customer can book again with the
+   *  same business — the URL is already this page, so navigating does nothing. */
+  function startNewBooking() {
+    resetOtpSession()
+    setConfirmation(null)
+    setError(null)
+    setServiceId('')
+    setSelectedDate('')
+    setSelectedSlot('')
+    setCustomerNotes('')
+    setAddress(EMPTY_ADDRESS)
+    setEmailReminder(true)
+    setSmsReminder(false)
+    setStep(1)
+  }
+
   const needsAddress =
     services.find((service) => service.id === serviceId)
       ?.requiresCustomerAddress === true
@@ -473,9 +489,13 @@ export function BookBusinessPage() {
           <Link to="/book" className="btn btn-secondary">
             Book with another business
           </Link>
-          <Link to={`/book/${business.slug}`} className="btn btn-primary">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={startNewBooking}
+          >
             Make another booking
-          </Link>
+          </button>
         </div>
       </div>
     )

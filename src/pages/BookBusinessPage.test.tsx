@@ -255,6 +255,45 @@ describe('BookBusinessPage', () => {
     }, 'access-token')
   })
 
+  it('restarts the booking flow from "Make another booking"', async () => {
+    vi.mocked(publicApi.createPublicBooking).mockResolvedValue({
+      id: 'bk-1',
+      businessId: 'b-1',
+      status: 'CONFIRMED',
+      startDatetime: slots[0].startDatetime,
+      endDatetime: slots[0].endDatetime,
+      customer: {
+        id: 'c-1',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane@example.com',
+      },
+      service: { id: 's-1', name: 'Haircut', durationMinutes: 30 },
+    } as Booking)
+
+    const user = userEvent.setup()
+    renderPage(true)
+
+    await screen.findByText('Haircut')
+    await user.click(screen.getByRole('radio'))
+    await chooseDay(user, slotNine)
+    const [firstSlot] = await screen.findAllByRole('button', {
+      name: /\d{1,2}:\d{2}/,
+    })
+    await user.click(firstSlot)
+    await user.click(
+      screen.getByRole('button', { name: 'Request appointment' }),
+    )
+
+    await screen.findByText('Thanks, Jane')
+
+    await user.click(screen.getByText('Make another booking'))
+
+    // back on the service step, with nothing carried over from the last booking
+    expect(await screen.findByRole('radio')).not.toBeChecked()
+    expect(screen.queryByText('Thanks, Jane')).not.toBeInTheDocument()
+  })
+
   it('offers the guest details form before an anonymous customer can submit', async () => {
     const user = userEvent.setup()
     renderPage()
