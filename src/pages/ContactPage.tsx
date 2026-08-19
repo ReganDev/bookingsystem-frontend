@@ -109,6 +109,10 @@ export function ContactPage() {
             placeholder="Tell us a little about your business and what you'd like to offer bookings for."
           />
         </div>
+        <p className="field-hint privacy-notice">
+          We use your details only to reply to this enquiry. See our{' '}
+          <Link to="/privacy">privacy policy</Link>.
+        </p>
         <button className="btn btn-primary" type="submit" disabled={loading}>
           {loading ? 'Sending…' : 'Send enquiry'}
         </button>
