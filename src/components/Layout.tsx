@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { SiteFooter } from './SiteFooter'
 
 export function Layout() {
   const { user, business, logout } = useAuth()
@@ -23,6 +24,7 @@ export function Layout() {
       <main className="app-main">
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   )
 }
@@ -41,6 +43,7 @@ export function AuthLayout() {
           <Link to="/contact">Contact us</Link>
         </p>
       )}
+      <SiteFooter />
     </div>
   )
 }

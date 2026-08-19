@@ -1,6 +1,7 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import bookingbaseLogo from '../assets/bookingbase-logo.png'
+import { SiteFooter } from './SiteFooter'
 
 export function PublicLayout() {
   const {
@@ -66,6 +67,7 @@ export function PublicLayout() {
       <main className="app-main">
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   )
 }
