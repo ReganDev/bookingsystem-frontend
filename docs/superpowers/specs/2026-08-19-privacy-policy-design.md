@@ -96,8 +96,13 @@ email verification 24 hours, password reset 24 hours, booking OTP 10 minutes.
   a `PRIVACY_SECTIONS` array.
 - `src/components/SiteFooter.tsx` — `Privacy · Contact · © BookingBase`.
 - `src/pages/PrivacyPolicyPage.test.tsx` — asserts every required heading
-  renders, and that no `REPLACE_ME` marker survives, so the build fails loudly
-  until the facts are filled in.
+  renders, and that the page shows a red "not ready to publish" banner listing
+  the unfilled keys while any remain.
+
+  An earlier draft had the test suite fail outright until the facts were filled
+  in. Rejected: a permanently red suite blocks unrelated work and trains people
+  to ignore failures. A banner visible on the page itself is impossible to miss
+  and costs nothing.
 
 ### Edited files
 
