@@ -2646,6 +2646,10 @@ button {
   font-size: 0.9rem;
 }
 
+.policy-header {
+  margin-bottom: 1.5rem;
+}
+
 .policy-updated {
   color: var(--color-fg-muted);
   font-size: 0.9rem;
