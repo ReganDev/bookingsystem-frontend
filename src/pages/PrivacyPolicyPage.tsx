@@ -23,7 +23,7 @@ export function PrivacyPolicyPage() {
   return (
     <article className="card policy-page">
       {hasUnfilledDetails() && (
-        <p className="policy-warning" role="status">
+        <p className="policy-warning" role="alert">
           This policy is not ready to publish. Fill in{' '}
           <code>{unfilledDetailKeys().join(', ')}</code> in{' '}
           <code>src/content/privacyPolicy.ts</code>.
@@ -102,7 +102,7 @@ export function PrivacyPolicyPage() {
           <li>your first and last name</li>
           <li>your email address</li>
           <li>your phone number, if you give us one</li>
-          <li>your password, which we store only as an encrypted hash</li>
+          <li>your password, which we store only as a one-way hash</li>
           <li>your business name and contact details, if you run a business</li>
         </ul>
         <p>If you book an appointment, the business you book with collects:</p>
@@ -119,12 +119,17 @@ export function PrivacyPolicyPage() {
             the driving distance and travel time between the business and that
             address, worked out from postcodes
           </li>
-          <li>whether you asked for a reminder</li>
+          <li>
+            your preference for receiving your booking details by email, and
+            an SMS preference, which is recorded but not currently available
+          </li>
         </ul>
         <p>
-          Reminders are sent by email. We do not send text messages, and your
-          phone number is not shared with any messaging service. If you tick the
-          text reminder option, we record only that you would like one.
+          We email you your booking details only if you ask us to when you
+          book. We do not send booking reminders — nothing in {serviceName}{' '}
+          currently sends one. We do not send text messages, and your phone
+          number is not shared with any messaging service; the text option on
+          the booking form cannot be selected yet.
         </p>
         <p>
           If you book without an account, we hold your details for up to 10
@@ -139,6 +144,18 @@ export function PrivacyPolicyPage() {
           If you send us an enquiry, we collect your name, email address,
           business name if you give one, and your message.
         </p>
+        <p>
+          We also collect some technical data automatically as part of running
+          the service:
+        </p>
+        <ul>
+          <li>your IP address</li>
+          <li>standard web request logs</li>
+          <li>
+            records of failed sign-in and verification attempts, used to limit
+            abuse
+          </li>
+        </ul>
       </section>
 
       <section id="lawful-basis" className="policy-section">
@@ -146,13 +163,9 @@ export function PrivacyPolicyPage() {
         <ul>
           <li>
             <strong>To provide the service you asked for</strong> — creating
-            your account, taking and managing your bookings, and letting you
-            sign in. Lawful basis: <em>performance of a contract</em>.
-          </li>
-          <li>
-            <strong>To send you a reminder or confirmation</strong> when you ask
-            for one. Lawful basis: <em>consent</em>, which you can withdraw at
-            any time.
+            your account, taking and managing your bookings, letting you sign
+            in, and emailing you your booking details if you ask for them when
+            you book. Lawful basis: <em>performance of a contract</em>.
           </li>
           <li>
             <strong>To keep the service running, secure and free of abuse</strong>{' '}
@@ -197,7 +210,10 @@ export function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>Our service providers</strong>, listed in the next section,
-            handle information on our behalf under contract.
+            handle information on our behalf. Most do so under contract; the
+            one exception is the free routing service, which is a public demo
+            server we have no contract with and which never receives anything
+            that identifies you — see the note below.
           </li>
           <li>
             <strong>A small number of our own staff</strong> can access accounts
@@ -262,19 +278,35 @@ export function PrivacyPolicyPage() {
         <h3>How long we keep it</h3>
         <p>
           We keep personal information only as long as we need it for the
-          purposes above.
+          purposes above. For customer and booking records, a business is the
+          controller and sets its own retention — the periods below marked as
+          a default are BookingBase&apos;s platform default for those rows,
+          not a fixed commitment, and a business can shorten, extend or
+          delete its records sooner at any time.
         </p>
         <dl className="policy-retention">
           {retentionPeriods.map((entry) => (
             <div key={entry.category} className="policy-retention-row">
               <dt>{entry.category}</dt>
-              <dd>{entry.period}</dd>
+              <dd>
+                {entry.period}
+                {entry.controller === 'business-default' && (
+                  <>
+                    {' '}
+                    <em>
+                      (BookingBase&apos;s default; the business may set a
+                      different period.)
+                    </em>
+                  </>
+                )}
+              </dd>
             </div>
           ))}
         </dl>
         <p>
-          Where a business is the controller of its own customer records, that
-          business sets the retention period and can delete records at any time.
+          Where a business is the controller of its own customer and booking
+          records, that business sets the retention period and can delete
+          records at any time.
         </p>
       </section>
 
@@ -285,7 +317,7 @@ export function PrivacyPolicyPage() {
             Everything you send travels over an encrypted HTTPS connection.
           </li>
           <li>
-            Passwords are stored as one-way encrypted hashes. Nobody at{' '}
+            Passwords are stored as one-way hashes. Nobody at{' '}
             {serviceName} can read your password.
           </li>
           <li>
@@ -320,6 +352,20 @@ export function PrivacyPolicyPage() {
           storage so you stay signed in. It is strictly necessary to provide a
           service you asked for, and signing out removes it. Clearing your
           browser data removes it too.
+        </p>
+        <p>
+          While you are partway through making a booking, we save your
+          progress — including any notes and, for a mobile-visit service, the
+          address you have entered — in your browser&apos;s session storage,
+          so you do not lose it if you navigate away. This is cleared when you
+          submit the booking, and it is cleared automatically when you close
+          the tab.
+        </p>
+        <p>
+          This site can be installed and used offline. The files that make up
+          the app itself are cached on your device for that purpose, but no
+          personal data is stored in that cache — requests for your data are
+          always sent to our server, never served from the cache.
         </p>
         <p>
           The typefaces on this site load from Google Fonts, which receives your
@@ -385,13 +431,14 @@ export function PrivacyPolicyPage() {
       <section id="withdrawing-consent" className="policy-section">
         <h3>Withdrawing your consent</h3>
         <p>
-          Where we rely on your consent — currently only for booking reminders —
-          you can withdraw it at any time by changing the reminder option on a
-          booking, or by emailing{' '}
-          <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>. Withdrawing
-          consent does not affect anything done before you withdrew it, and does
-          not affect messages we must send to operate your booking, such as
-          confirming it.
+          None of the processing described in this policy currently relies on
+          your consent — the lawful bases we rely on are performance of a
+          contract, legitimate interests, and legal obligation, as set out
+          above. If that changes in future, we will update this policy to say
+          what we are asking your consent for and give you a clear way to
+          withdraw it. If you have any concern about how your information is
+          used in the meantime, email{' '}
+          <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
         </p>
       </section>
 
@@ -412,7 +459,7 @@ export function PrivacyPolicyPage() {
             <a
               href="https://ico.org.uk/make-a-complaint/"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               ico.org.uk/make-a-complaint
             </a>

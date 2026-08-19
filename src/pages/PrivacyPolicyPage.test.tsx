@@ -70,6 +70,15 @@ describe('PrivacyPolicyPage', () => {
 
     // Fails once the constants are filled in — delete this test then, and keep
     // the one below.
-    expect(screen.getByRole('status')).toHaveTextContent(/not ready to publish/i)
+    expect(screen.getByRole('alert')).toHaveTextContent(/not ready to publish/i)
+  })
+
+  it('does not name services the product does not use, anywhere in the page', () => {
+    const { container } = renderPage()
+    const rendered = container.textContent?.toLowerCase() ?? ''
+
+    for (const absent of ['stripe', 'google analytics', 'cloudflare', 'twilio']) {
+      expect(rendered).not.toContain(absent)
+    }
   })
 })

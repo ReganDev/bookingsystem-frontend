@@ -39,8 +39,7 @@ export function AuthLayout() {
       {!isLogin && (
         <p className="auth-footer">
           <Link to="/book">Book an appointment</Link> ·{' '}
-          <Link to="/signup">Create account</Link> ·{' '}
-          <Link to="/contact">Contact us</Link>
+          <Link to="/signup">Create account</Link>
         </p>
       )}
       <SiteFooter />

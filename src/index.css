@@ -2728,3 +2728,27 @@ button {
   display: block;
   margin: 0;
 }
+
+/* ---------- Footer visibility on auth pages ---------- */
+
+/* .auth-page uses display:grid + place-items:center, which shrinks the
+   footer to its own content width and centers it, turning its border-top
+   into a short stray rule instead of a full-width divider. */
+.auth-page .site-footer {
+  width: 100%;
+}
+
+/* .auth-page--split (the /login page) stacks a full-height hero split above
+   the footer, pushing it a whole viewport below the fold. Let the split
+   section share the viewport with the footer instead of claiming all of it. */
+.auth-page--split {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.auth-page--split .auth-split,
+.auth-page--split .auth-carousel {
+  min-height: 0;
+  flex: 1;
+}

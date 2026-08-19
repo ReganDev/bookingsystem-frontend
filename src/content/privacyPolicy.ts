@@ -15,6 +15,13 @@ export type ProviderEntry = {
 export type RetentionEntry = {
   category: string
   period: string
+  /**
+   * 'bookingbase' — BookingBase itself controls this record and the period is
+   * a firm commitment. 'business-default' — a business controls this record
+   * as controller; the period shown is BookingBase's platform default, which
+   * the business can shorten, extend or delete sooner at any time.
+   */
+  controller: 'bookingbase' | 'business-default'
 }
 
 export type PrivacySection = {
@@ -48,35 +55,42 @@ export const retentionPeriods: RetentionEntry[] = [
   {
     category: 'Booking records (including any address given for a mobile visit)',
     period:
-      'six years after the appointment, so the business can meet HMRC record-keeping and legal claim time limits',
+      'six years after the appointment, so the business can meet HMRC record-keeping and legal claim time limits, unless the business sets a different period',
+    controller: 'business-default',
   },
   {
     category: 'Account details for business owners and customers',
     period:
       'for as long as the account is open, and up to 12 months after it is closed',
+    controller: 'bookingbase',
   },
   {
     category: 'Customer records held by a business (including notes)',
     period:
       'until the business deletes the customer, or the business account is closed',
+    controller: 'business-default',
   },
   {
     category: 'Unconfirmed bookings awaiting an email code',
     period: '10 minutes, after which the details expire unused',
+    controller: 'bookingbase',
   },
   {
     category: 'Sign-in sessions',
     period:
       'access tokens last 15 minutes and refresh tokens 7 days; signing out ends them',
+    controller: 'bookingbase',
   },
   {
     category: 'Email verification and password reset links',
     period: '24 hours from being sent',
+    controller: 'bookingbase',
   },
   {
     category: 'Contact enquiries',
     period:
       'kept in our email inbox for up to 12 months, then deleted; enquiries are never stored in our database',
+    controller: 'bookingbase',
   },
 ]
 
@@ -156,8 +170,8 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
 /** Keys whose value is still the placeholder. A blank string counts as filled. */
 export function unfilledDetailKeys(
   details: PrivacyDetails = privacyDetails,
-): string[] {
-  return Object.entries(details)
+): (keyof PrivacyDetails)[] {
+  return (Object.entries(details) as [keyof PrivacyDetails, string][])
     .filter(([, value]) => value === PLACEHOLDER)
     .map(([key]) => key)
 }
