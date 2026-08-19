@@ -378,8 +378,9 @@ describe('PrivacyPolicyPage', () => {
     expect(screen.getByText('Supabase')).toBeInTheDocument()
     expect(screen.getByText('Resend')).toBeInTheDocument()
     expect(screen.getByText('postcodes.io')).toBeInTheDocument()
-    // Two places say this: the provider entry and the note below the list.
-    expect(screen.getAllByText(/coordinates only/i).length).toBeGreaterThan(0)
+    // Two places say this: the OSRM provider entry, and the note below the
+    // list explaining why we send it nothing identifying.
+    expect(screen.getAllByText(/coordinates only/i)).toHaveLength(2)
   })
 
   it('says no text messages are sent', () => {
