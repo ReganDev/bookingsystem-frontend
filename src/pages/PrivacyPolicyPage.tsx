@@ -362,6 +362,12 @@ export function PrivacyPolicyPage() {
           the tab.
         </p>
         <p>
+          If you create an account partway through booking, we also keep a note
+          of which page to send you back to after you verify your email. That
+          is a page address, not personal information, and it is removed once
+          you are returned.
+        </p>
+        <p>
           This site can be installed and used offline. The files that make up
           the app itself are cached on your device for that purpose, but no
           personal data is stored in that cache — requests for your data are

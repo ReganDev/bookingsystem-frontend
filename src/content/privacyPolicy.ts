@@ -127,6 +127,14 @@ export const providers: ProviderEntry[] = [
     location: 'United States',
   },
   {
+    name: 'Sentry',
+    purpose:
+      'Alerts us when the service hits an error, so we can fix it',
+    receives:
+      'error reports and technical diagnostics from our own systems, which can include personal information that happened to be involved in the error',
+    location: 'United States and EU',
+  },
+  {
     name: 'postcodes.io',
     purpose:
       'Turns a postcode into map coordinates so a business can see how far it needs to travel',

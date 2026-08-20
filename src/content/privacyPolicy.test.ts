@@ -50,6 +50,7 @@ describe('privacyPolicy content', () => {
       'Resend',
       'Vercel',
       'Railway',
+      'Sentry',
       'postcodes.io',
       'OSRM (Project OSRM demo server)',
       'Google Fonts',

@@ -1368,6 +1368,9 @@ until these are done. None are code changes.
 - [ ] Register with the ICO if not already registered (£40–£60 a year for most small businesses).
 - [ ] Point `app.enquiry.to` at the business address rather than the personal Gmail default in `application-prod.properties`.
 - [ ] Set `RESEND_FROM` to a verified BookingBase domain instead of `onboarding@resend.dev`.
+- [ ] Accept or sign the data processing agreement and UK International Data Transfer Addendum with each US-linked provider: Supabase, Resend, Vercel, Railway, Sentry and Google. The transfers section of the policy asserts these safeguards are in place, so the assertion is false until someone actually clicks through each vendor's DPA.
+- [ ] Disclose whoever hosts the enquiry mailbox. Once `app.enquiry.to` points at a real business address, the provider behind it (Google Workspace, Microsoft 365, or similar) is a recipient of enquiry data and belongs in the provider list.
+- [ ] Re-check the provider list against the backend `pom.xml` and `application-prod.properties` whenever a dependency is added. The Sentry entry was missed on the first pass because the initial sweep looked for analytics and tracking, not error monitoring.
 
 ## Known gaps, out of scope for this plan
 
