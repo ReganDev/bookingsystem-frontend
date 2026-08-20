@@ -1365,7 +1365,7 @@ until these are done. None are code changes.
 
 - [ ] Fill in `legalEntity`, `companyNumber`, `registeredAddress`, `privacyEmail` and `icoRegistrationNumber` in `src/content/privacyPolicy.ts`. The red banner disappears when they are all set; delete the "warns while business details are still unfilled" test in `PrivacyPolicyPage.test.tsx` at that point.
 - [ ] Confirm the retention periods in `retentionPeriods` are ones the business will actually keep. Nothing deletes data automatically — there is no scheduled cleanup job in the backend — so each period is a manual commitment today.
-- [ ] Register with the ICO if not already registered (£40–£60 a year for most small businesses).
+- [ ] **Deferred by decision (2026-08-20):** ICO registration. Graysite is operating without it for now. The policy makes no registration claim, so nothing published is false — but the fee is still legally due (£40 by direct debit, tier 1), there is no low-customer-count exemption, and non-payment carries a penalty of up to £4,350. Revisit when taking on paying business customers. On registering, set `icoRegistrationNumber` in `src/content/privacyPolicy.ts` and the paragraph reappears automatically.
 - [ ] Point `app.enquiry.to` at the business address rather than the personal Gmail default in `application-prod.properties`.
 - [ ] Set `RESEND_FROM` to a verified BookingBase domain instead of `onboarding@resend.dev`.
 - [ ] Accept or sign the data processing agreement and UK International Data Transfer Addendum with each US-linked provider: Supabase, Resend, Vercel, Railway, Sentry and Google. The transfers section of the policy asserts these safeguards are in place, so the assertion is false until someone actually clicks through each vendor's DPA.
