@@ -34,14 +34,17 @@ export const privacyDetails = {
   appDomain: 'app.bookingbase.co.uk',
   marketingDomain: 'bookingbase.co.uk',
   /** Registered company name, or "<your name>, trading as BookingBase". */
-  legalEntity: PLACEHOLDER,
+  legalEntity: 'Graysite',
   /** Companies House number. Set to '' for a sole trader — the line is then omitted. */
-  companyNumber: PLACEHOLDER,
-  registeredAddress: PLACEHOLDER,
+  companyNumber: '',
+  /** Postal address. Set to '' to omit the line; contact is then by email only. */
+  registeredAddress: '',
+  /** Where the business operates from, shown when there is no postal address. */
+  basedIn: 'Northern Ireland',
   /** Published contact for privacy requests, e.g. privacy@bookingbase.co.uk. */
-  privacyEmail: PLACEHOLDER,
-  /** ICO data protection register entry. Set to '' if genuinely exempt. */
-  icoRegistrationNumber: PLACEHOLDER,
+  privacyEmail: 'graysitequeries@gmail.com',
+  /** ICO data protection register entry. Set to '' while not registered. */
+  icoRegistrationNumber: '',
   lastUpdated: '19 August 2026',
 }
 
@@ -149,9 +152,11 @@ export const providers: ProviderEntry[] = [
     location: 'Germany',
   },
   {
-    name: 'Google Fonts',
-    purpose: 'Serves the typefaces this site uses',
-    receives: 'your IP address when the fonts load',
+    name: 'Google',
+    purpose:
+      'Serves the typefaces this site uses, and hosts the mailbox that receives anything you email us',
+    receives:
+      'your IP address when the typefaces load, and the content of any message you send to our contact address',
     location: 'United States and EU',
   },
 ]

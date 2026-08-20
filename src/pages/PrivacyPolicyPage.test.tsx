@@ -65,12 +65,27 @@ describe('PrivacyPolicyPage', () => {
     expect(screen.getByText(/do not take payments/i)).toBeInTheDocument()
   })
 
-  it('warns while business details are still unfilled', () => {
+  it('shows no placeholder warning now the business details are filled in', () => {
     renderPage()
 
-    // Fails once the constants are filled in — delete this test then, and keep
-    // the one below.
-    expect(screen.getByRole('alert')).toHaveTextContent(/not ready to publish/i)
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('names the operator and gives a contact address, without claiming ICO registration', () => {
+    renderPage()
+
+    expect(screen.getByText(/operated by Graysite/)).toBeInTheDocument()
+    expect(screen.getByText(/based in Northern Ireland/)).toBeInTheDocument()
+    expect(
+      screen.getAllByRole('link', { name: 'graysitequeries@gmail.com' }).length,
+    ).toBeGreaterThan(0)
+    expect(screen.queryByText(/registered with the Information/i)).toBeNull()
+  })
+
+  it('never claims to sell or share information for marketing', () => {
+    renderPage()
+
+    expect(screen.getByText(/We never sell/)).toBeInTheDocument()
   })
 
   it('does not name services the product does not use, anywhere in the page', () => {

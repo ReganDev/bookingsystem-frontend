@@ -14,6 +14,7 @@ const {
   legalEntity,
   companyNumber,
   registeredAddress,
+  basedIn,
   privacyEmail,
   icoRegistrationNumber,
   lastUpdated,
@@ -56,8 +57,11 @@ export function PrivacyPolicyPage() {
         <h3>Who we are</h3>
         <p>
           {serviceName} is booking software operated by {legalEntity}
-          {companyNumber ? `, registered in England and Wales under company number ${companyNumber}` : ''}
-          . Our address is {registeredAddress}.
+          {companyNumber
+            ? `, registered under company number ${companyNumber}`
+            : ''}
+          {basedIn ? `, based in ${basedIn}` : ''}.
+          {registeredAddress ? ` Our address is ${registeredAddress}.` : ''}
         </p>
         <p>
           For anything to do with your personal information, email us at{' '}
@@ -189,10 +193,13 @@ export function PrivacyPolicyPage() {
       <section id="how-we-use-it" className="policy-section">
         <h3>How we use your information</h3>
         <p>
-          We use it to run the booking service and nothing else. We do not sell
-          it, rent it, or share it for anyone&apos;s marketing. We do not build
-          advertising profiles, and we do not make any decision about you by
-          automated means.
+          We use it to run the booking service and nothing else. We never sell
+          or rent your information, we never share it with anyone for their own
+          marketing or advertising, and we never hand it to a data broker. We do
+          not build advertising profiles, and we do not make any decision about
+          you by automated means. The only people and companies who see your
+          information are the ones listed in the next two sections, and each of
+          them sees it solely so the booking service can work.
         </p>
         <p>
           We do not take payments through {serviceName}. Prices are recorded so
