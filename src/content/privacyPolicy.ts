@@ -126,7 +126,7 @@ export const providers: ProviderEntry[] = [
   {
     name: 'Resend',
     purpose:
-      'Delivers our emails — verification codes and links, password resets, booking confirmations, notices to businesses when a booking is cancelled or moved, and contact enquiries',
+      'Delivers our emails — verification codes and links, password resets, booking confirmations, notices to a business when a customer cancels or moves a booking online, and contact enquiries',
     receives: 'names, email addresses and the content of those messages',
     location: 'United States',
   },
