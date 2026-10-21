@@ -96,4 +96,42 @@ describe('PrivacyPolicyPage', () => {
       expect(rendered).not.toContain(absent)
     }
   })
+
+  // Each of these matches what the backend actually does; see the review on
+  // 2026-10-22 that found the earlier wording overstated what was deleted.
+  it('discloses that booking without signing in creates a kept account', () => {
+    const { container } = renderPage()
+    const text = container.textContent ?? ''
+
+    expect(text).toContain('Booking without signing in creates an account.')
+    expect(text).toContain('kept until you ask us to delete them')
+    expect(text).not.toMatch(/expire unused/i)
+  })
+
+  it('says booking emails are always sent, not only on request', () => {
+    const { container } = renderPage()
+    const text = container.textContent ?? ''
+
+    expect(text).toContain('Every booking is confirmed by email')
+    expect(text).not.toMatch(/only if you ask/i)
+  })
+
+  it('gives password reset links their real one-hour lifetime', () => {
+    renderPage()
+
+    expect(screen.getByText('Password reset links')).toBeInTheDocument()
+    expect(screen.getByText(/1 hour from being sent/)).toBeInTheDocument()
+  })
+
+  it('does not claim failed sign-ins are recorded', () => {
+    const { container } = renderPage()
+
+    expect(container.textContent).not.toMatch(/failed sign-in/i)
+  })
+
+  it('mentions the theme choice kept in browser storage', () => {
+    renderPage()
+
+    expect(screen.getByText(/light or dark theme/)).toBeInTheDocument()
+  })
 })

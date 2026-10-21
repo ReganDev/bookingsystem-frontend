@@ -45,7 +45,7 @@ export const privacyDetails = {
   privacyEmail: 'graysitequeries@gmail.com',
   /** ICO data protection register entry. Set to '' while not registered. */
   icoRegistrationNumber: '',
-  lastUpdated: '19 August 2026',
+  lastUpdated: '22 October 2026',
 }
 
 export type PrivacyDetails = typeof privacyDetails
@@ -74,8 +74,16 @@ export const retentionPeriods: RetentionEntry[] = [
     controller: 'business-default',
   },
   {
-    category: 'Unconfirmed bookings awaiting an email code',
-    period: '10 minutes, after which the details expire unused',
+    category:
+      'Booking requests made without signing in that were never confirmed with the email code',
+    period:
+      'the code stops working after 10 minutes, but the request and the customer account created for it are kept until you ask us to delete them',
+    controller: 'bookingbase',
+  },
+  {
+    category: 'Links in booking emails for cancelling or rescheduling',
+    period:
+      'they do not expire; changes are accepted until the cancellation notice period the business sets before the appointment',
     controller: 'bookingbase',
   },
   {
@@ -85,8 +93,13 @@ export const retentionPeriods: RetentionEntry[] = [
     controller: 'bookingbase',
   },
   {
-    category: 'Email verification and password reset links',
+    category: 'Email verification links, and links for setting a password on an account created at booking',
     period: '24 hours from being sent',
+    controller: 'bookingbase',
+  },
+  {
+    category: 'Password reset links',
+    period: '1 hour from being sent',
     controller: 'bookingbase',
   },
   {
@@ -107,13 +120,13 @@ export const providers: ProviderEntry[] = [
     name: 'Supabase',
     purpose: 'Stores our database and the photos businesses upload',
     receives:
-      'names, email addresses, phone numbers, any address given for a mobile visit, booking details and notes',
+      'names, email addresses, phone numbers, any address given for a mobile visit, booking details and notes; and your IP address when your browser loads a business\'s photos',
     location: 'United States and EU',
   },
   {
     name: 'Resend',
     purpose:
-      'Delivers our emails — verification, password resets, booking confirmations and contact enquiries',
+      'Delivers our emails — verification codes and links, password resets, booking confirmations, notices to businesses when a booking is cancelled or moved, and contact enquiries',
     receives: 'names, email addresses and the content of those messages',
     location: 'United States',
   },

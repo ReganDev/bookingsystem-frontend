@@ -124,21 +124,32 @@ export function PrivacyPolicyPage() {
             address, worked out from postcodes
           </li>
           <li>
-            your preference for receiving your booking details by email, and
-            an SMS preference, which is recorded but not currently available
+            whether you ticked the email and text-message options on the
+            booking form. These choices are recorded, but they do not currently
+            change what we send — see below
           </li>
         </ul>
         <p>
-          We email you your booking details only if you ask us to when you
-          book. We do not send booking reminders — nothing in {serviceName}{' '}
-          currently sends one. We do not send text messages, and your phone
-          number is not shared with any messaging service; the text option on
-          the booking form cannot be selected yet.
+          Every booking is confirmed by email, whether or not you tick
+          &ldquo;Email me my booking details&rdquo;. That email contains the
+          booking details and a private link for cancelling or rescheduling the
+          booking. If the business cancels or you move a booking online, the
+          business is emailed too. We do not send booking reminders — nothing
+          in {serviceName} currently sends one. We do not send text messages,
+          and your phone number is not shared with any messaging service; the
+          text option on the booking form cannot be selected yet.
         </p>
         <p>
-          If you book without an account, we hold your details for up to 10
-          minutes while you confirm the code we email you. If you never confirm,
-          those details expire unused.
+          <strong>Booking without signing in creates an account.</strong> When
+          you start a booking without signing in, we create a customer account
+          in your name with your email address and phone number, unless your
+          email address already has one. We save the booking request, with any
+          notes and visit address, while you confirm the code we email you. The
+          code stops working after 10 minutes. If you confirm it, your booking
+          is made, and if the account is new we email you a link to set a
+          password so you can sign in later; you do not have to use it. If you
+          never confirm, the booking is not made, but the account and the
+          request are kept until you ask us to delete them.
         </p>
         <p>
           Businesses can also add notes about their customers, and upload photos
@@ -156,8 +167,8 @@ export function PrivacyPolicyPage() {
           <li>your IP address</li>
           <li>standard web request logs</li>
           <li>
-            records of failed sign-in and verification attempts, used to limit
-            abuse
+            the number of wrong codes entered when confirming a booking, and
+            when codes and links were last sent, used to limit abuse
           </li>
         </ul>
       </section>
@@ -167,9 +178,10 @@ export function PrivacyPolicyPage() {
         <ul>
           <li>
             <strong>To provide the service you asked for</strong> — creating
-            your account, taking and managing your bookings, letting you sign
-            in, and emailing you your booking details if you ask for them when
-            you book. Lawful basis: <em>performance of a contract</em>.
+            your account (including the one created when you book without
+            signing in), taking and managing your bookings, letting you sign in,
+            and emailing you confirmation of each booking with a link to manage
+            it. Lawful basis: <em>performance of a contract</em>.
           </li>
           <li>
             <strong>To keep the service running, secure and free of abuse</strong>{' '}
@@ -333,7 +345,14 @@ export function PrivacyPolicyPage() {
           </li>
           <li>
             Accounts must verify their email address before they can be used,
-            and booking without an account requires a code sent to your email.
+            and booking without signing in requires a code sent to your email.
+          </li>
+          <li>
+            The cancel and reschedule link in each booking email is unique and
+            cannot be guessed, but anyone who has it can see that booking and
+            change it, so do not forward the email. The link does not expire;
+            changes are accepted until the business&apos;s cancellation notice
+            period before the appointment.
           </li>
           <li>
             Businesses can only see their own customers and bookings. Our
@@ -359,6 +378,11 @@ export function PrivacyPolicyPage() {
           storage so you stay signed in. It is strictly necessary to provide a
           service you asked for, and signing out removes it. Clearing your
           browser data removes it too.
+        </p>
+        <p>
+          If you choose a light or dark theme, we remember that choice in your
+          browser&apos;s local storage. It contains nothing about you, and
+          choosing &ldquo;Match device&rdquo; removes it.
         </p>
         <p>
           While you are partway through making a booking, we save your
