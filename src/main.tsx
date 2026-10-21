@@ -13,12 +13,24 @@ registerSW({
   },
 })
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </BrowserRouter>
-  </StrictMode>,
-)
+function render() {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
+    </StrictMode>,
+  )
+}
+
+// `npm run dev:mock` serves fixture data instead of calling the backend.
+if (import.meta.env.VITE_MOCK_API === 'true') {
+  import('./dev/mockApi').then(({ installMockApi }) => {
+    installMockApi()
+    render()
+  })
+} else {
+  render()
+}
