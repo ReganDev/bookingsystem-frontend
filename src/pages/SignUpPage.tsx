@@ -117,6 +117,10 @@ export function SignUpPage() {
           />
           <span className="field-hint">At least 8 characters.</span>
         </div>
+        <p className="field-hint privacy-notice">
+          We use your details to create and run your account. See our{' '}
+          <Link to="/privacy">privacy policy</Link>.
+        </p>
         <button className="btn btn-primary" type="submit" disabled={loading}>
           {loading ? 'Creating account…' : 'Create account'}
         </button>

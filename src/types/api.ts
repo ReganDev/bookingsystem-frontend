@@ -209,6 +209,17 @@ export interface Booking {
   durationSeconds?: number
 }
 
+/** A signed-in customer's own booking, as returned by /customers/me/bookings. */
+export interface CustomerBooking {
+  booking: Booking
+  businessName: string
+  businessSlug: string
+  businessEmail?: string
+  businessPhone?: string
+  canCancel: boolean
+  canReschedule: boolean
+}
+
 export interface BookingRequest {
   customerId: string
   serviceId: string

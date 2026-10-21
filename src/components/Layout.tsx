@@ -1,5 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { SiteFooter } from './SiteFooter'
+import { ThemeToggle } from './ThemeToggle'
 
 export function Layout() {
   const { user, business, logout } = useAuth()
@@ -9,6 +11,7 @@ export function Layout() {
       <header className="app-header">
         <h1>Business Dashboard</h1>
         <div className="app-header-meta">
+          <ThemeToggle />
           <Link to="/book" className="header-link">
             Customer booking page
           </Link>
@@ -23,6 +26,7 @@ export function Layout() {
       <main className="app-main">
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   )
 }
@@ -37,10 +41,10 @@ export function AuthLayout() {
       {!isLogin && (
         <p className="auth-footer">
           <Link to="/book">Book an appointment</Link> ·{' '}
-          <Link to="/signup">Create account</Link> ·{' '}
-          <Link to="/contact">Contact us</Link>
+          <Link to="/signup">Create account</Link>
         </p>
       )}
+      <SiteFooter />
     </div>
   )
 }

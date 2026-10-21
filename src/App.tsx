@@ -12,6 +12,7 @@ import { BrowseBusinessesPage } from './pages/BrowseBusinessesPage'
 import { ContactPage } from './pages/ContactPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { CheckEmailPage } from './pages/CheckEmailPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
@@ -159,6 +160,7 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route path="/book" element={<BrowseBusinessesPage />} />
         <Route path="/book/:slug" element={<BookBusinessPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
       </Route>
 
       <Route element={<AuthLayout />}>

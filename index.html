@@ -24,6 +24,17 @@
       rel="stylesheet"
     />
     <title>BookingBase</title>
+    <script>
+      // Set the theme before first paint to avoid a light flash (see src/lib/theme.ts).
+      try {
+        var stored = localStorage.getItem('booking-theme')
+        var dark =
+          stored === 'dark' ||
+          (stored !== 'light' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

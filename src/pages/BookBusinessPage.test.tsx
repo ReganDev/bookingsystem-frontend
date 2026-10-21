@@ -181,6 +181,22 @@ describe('BookBusinessPage', () => {
     ).toBeEnabled()
   })
 
+  it('shows a privacy notice linking to the privacy policy before submitting', async () => {
+    const user = userEvent.setup()
+    renderPage(true)
+
+    await screen.findByText('Haircut')
+    await user.click(screen.getByRole('radio'))
+    await chooseDay(user, slotNine)
+    const [firstSlot] = await screen.findAllByRole('button', {
+      name: /\d{1,2}:\d{2}/,
+    })
+    await user.click(firstSlot)
+
+    const privacyLink = screen.getByRole('link', { name: 'privacy policy' })
+    expect(privacyLink).toHaveAttribute('href', '/privacy')
+  })
+
   it('lets the customer go back a step', async () => {
     const user = userEvent.setup()
     renderPage()

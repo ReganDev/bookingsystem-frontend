@@ -857,6 +857,10 @@ export function BookBusinessPage() {
                   </div>
                 )}
 
+                <p className="field-hint privacy-notice">
+                  Your details are sent to this business so it can manage your
+                  appointment. See our <Link to="/privacy">privacy policy</Link>.
+                </p>
                 <button
                   className="btn btn-primary"
                   type="submit"

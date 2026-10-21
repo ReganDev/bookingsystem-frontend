@@ -1,6 +1,8 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import bookingbaseLogo from '../assets/bookingbase-logo.png'
+import { SiteFooter } from './SiteFooter'
+import { ThemeToggle } from './ThemeToggle'
 
 export function PublicLayout() {
   const {
@@ -20,6 +22,7 @@ export function PublicLayout() {
           <img src={bookingbaseLogo} alt="BookingBase" className="brand-logo" />
         </Link>
         <div className="app-header-meta">
+          <ThemeToggle />
           {!isAuthenticated && (
             <>
               <Link to="/login" className="header-link">
@@ -66,6 +69,7 @@ export function PublicLayout() {
       <main className="app-main">
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   )
 }

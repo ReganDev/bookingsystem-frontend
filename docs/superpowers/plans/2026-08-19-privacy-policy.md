@@ -378,8 +378,9 @@ describe('PrivacyPolicyPage', () => {
     expect(screen.getByText('Supabase')).toBeInTheDocument()
     expect(screen.getByText('Resend')).toBeInTheDocument()
     expect(screen.getByText('postcodes.io')).toBeInTheDocument()
-    // Two places say this: the provider entry and the note below the list.
-    expect(screen.getAllByText(/coordinates only/i).length).toBeGreaterThan(0)
+    // Two places say this: the OSRM provider entry, and the note below the
+    // list explaining why we send it nothing identifying.
+    expect(screen.getAllByText(/coordinates only/i)).toHaveLength(2)
   })
 
   it('says no text messages are sent', () => {
@@ -1364,9 +1365,12 @@ until these are done. None are code changes.
 
 - [ ] Fill in `legalEntity`, `companyNumber`, `registeredAddress`, `privacyEmail` and `icoRegistrationNumber` in `src/content/privacyPolicy.ts`. The red banner disappears when they are all set; delete the "warns while business details are still unfilled" test in `PrivacyPolicyPage.test.tsx` at that point.
 - [ ] Confirm the retention periods in `retentionPeriods` are ones the business will actually keep. Nothing deletes data automatically — there is no scheduled cleanup job in the backend — so each period is a manual commitment today.
-- [ ] Register with the ICO if not already registered (£40–£60 a year for most small businesses).
+- [ ] **Deferred by decision (2026-08-20):** ICO registration. Graysite is operating without it for now. The policy makes no registration claim, so nothing published is false — but the fee is still legally due (£40 by direct debit, tier 1), there is no low-customer-count exemption, and non-payment carries a penalty of up to £4,350. Revisit when taking on paying business customers. On registering, set `icoRegistrationNumber` in `src/content/privacyPolicy.ts` and the paragraph reappears automatically.
 - [ ] Point `app.enquiry.to` at the business address rather than the personal Gmail default in `application-prod.properties`.
 - [ ] Set `RESEND_FROM` to a verified BookingBase domain instead of `onboarding@resend.dev`.
+- [ ] Accept or sign the data processing agreement and UK International Data Transfer Addendum with each US-linked provider: Supabase, Resend, Vercel, Railway, Sentry and Google. The transfers section of the policy asserts these safeguards are in place, so the assertion is false until someone actually clicks through each vendor's DPA.
+- [ ] Disclose whoever hosts the enquiry mailbox. Once `app.enquiry.to` points at a real business address, the provider behind it (Google Workspace, Microsoft 365, or similar) is a recipient of enquiry data and belongs in the provider list.
+- [ ] Re-check the provider list against the backend `pom.xml` and `application-prod.properties` whenever a dependency is added. The Sentry entry was missed on the first pass because the initial sweep looked for analytics and tracking, not error monitoring.
 
 ## Known gaps, out of scope for this plan
 

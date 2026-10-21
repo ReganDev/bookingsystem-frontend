@@ -4,10 +4,15 @@ import type {
   BookingRequest,
   BookingStatus,
   CancelScope,
+  CustomerBooking,
   Page,
   RecurringBookingRequest,
   RecurringBookingResponse,
 } from '../types/api'
+
+export function getMyBookings(token: string) {
+  return apiRequest<CustomerBooking[]>('/customers/me/bookings', { token })
+}
 
 export function getBookings(businessId: string, token: string) {
   return apiRequest<Page<Booking>>(`/businesses/${businessId}/bookings`, {
