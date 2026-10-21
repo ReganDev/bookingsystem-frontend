@@ -133,8 +133,8 @@ export function PrivacyPolicyPage() {
           Every booking is confirmed by email, whether or not you tick
           &ldquo;Email me my booking details&rdquo;. That email contains the
           booking details and a private link for cancelling or rescheduling the
-          booking. If the business cancels or you move a booking online, the
-          business is emailed too. We do not send booking reminders — nothing
+          booking. If you cancel or move a booking online, we email the
+          business to let it know. We do not send booking reminders — nothing
           in {serviceName} currently sends one. We do not send text messages,
           and your phone number is not shared with any messaging service; the
           text option on the booking form cannot be selected yet.
