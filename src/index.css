@@ -3074,3 +3074,238 @@ button {
   min-height: 0;
   flex: 1;
 }
+
+/* ---------- Embed mode (/book/<slug>?embed=1 inside an iframe) ---------- */
+
+/* The iframe is sized to the content, so nothing may size itself to the
+   viewport: that would feed the iframe's own height back into the layout. */
+:root[data-embed] {
+  background-color: transparent;
+}
+
+:root[data-embed] body,
+:root[data-embed] #root,
+:root[data-embed] .app-shell {
+  min-height: 0;
+}
+
+:root[data-embed] .public-shell:has(.booking-layout) {
+  height: auto;
+  overflow: visible;
+}
+
+:root[data-embed] .app-main,
+:root[data-embed] .public-shell:has(.booking-layout) .app-main {
+  flex: none;
+  overflow: visible;
+  padding: 0.75rem;
+}
+
+:root[data-embed] .booking-layout {
+  height: auto;
+  max-height: none;
+}
+
+:root[data-embed] .booking-layout .booking-panel {
+  height: auto;
+  overflow-y: visible;
+}
+
+.embed-footer {
+  padding: 0.25rem 0.75rem 0.75rem;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.embed-footer a {
+  color: var(--color-fg-muted);
+  text-decoration: none;
+}
+
+.embed-footer a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* The panel grows with each booking step; keep the photo a fixed shape
+   beside it instead of stretching to match. */
+@media (min-width: 801px) {
+  :root[data-embed] .booking-gallery {
+    align-self: start;
+    aspect-ratio: 4 / 5;
+    max-height: 36rem;
+  }
+
+  :root[data-embed] .booking-gallery-main img {
+    object-fit: cover;
+  }
+}
+
+/* Photos crop to their box in an embed rather than letterboxing. */
+:root[data-embed] .booking-gallery-main img {
+  object-fit: cover;
+}
+
+/* layout=fill: on a wide frame, go back to filling the frame's height with
+   the panel scrolling inside it. Narrow frames keep the auto layout above. */
+@media (min-width: 801px) {
+  :root[data-embed='fill'] .public-shell:has(.booking-layout) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  :root[data-embed='fill'] .public-shell:has(.booking-layout) .app-main {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  :root[data-embed='fill'] .booking-layout {
+    height: 100%;
+  }
+
+  :root[data-embed='fill'] .booking-layout .booking-panel {
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  :root[data-embed='fill'] .booking-gallery {
+    align-self: stretch;
+    aspect-ratio: auto;
+    max-height: none;
+  }
+}
+
+/* ---------- Loading ring ---------- */
+
+.loading-ring {
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 3px solid var(--color-primary-soft);
+  border-top-color: var(--color-primary);
+  animation: loading-ring-spin 0.8s linear infinite;
+}
+
+@keyframes loading-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-ring-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-ring {
+    animation: loading-ring-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+.booking-loading {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  min-height: 20rem;
+  text-align: center;
+}
+
+.booking-loading .slot-hint {
+  margin: 0;
+}
+
+/* In an embed the host page is the backdrop, so the loader floats on it. */
+:root[data-embed] .booking-loading {
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+/* ---------- Compact booking header (steps 2 to 4) ---------- */
+
+.booking-business-header.compact {
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.75rem;
+}
+
+.booking-business-header.compact .booking-business-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 1rem;
+}
+
+.booking-business-header.compact h2 {
+  font-size: 1.1rem;
+}
+
+.booking-business-header.compact .booking-eyebrow,
+.booking-business-header.compact .panel-subtitle,
+.booking-business-header.compact .booking-location {
+  display: none;
+}
+
+.wizard-step-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.wizard-step-head .wizard-step-count,
+.wizard-step-head .wizard-back {
+  margin: 0;
+}
+
+/* layout=fill: the day picker has to fit in the frame without scrolling, so
+   on that step the spacing tightens and the day cells size themselves to the
+   height that is left (29rem is everything else in the frame: padding, the
+   compact header, the stepper, Back, the heading, the month controls and the
+   legend under the grid). The calendar already explains its own colours, so
+   the "Available dates are highlighted" intro above it is gone. */
+@media (min-width: 801px) {
+  :root[data-embed='fill'] .booking-layout .booking-panel {
+    padding-block: 1.25rem;
+  }
+
+  :root[data-embed='fill'] .wizard-progress {
+    margin-bottom: 0.85rem;
+  }
+
+  :root[data-embed='fill'] .wizard-back {
+    min-height: 2.25rem;
+  }
+
+  :root[data-embed='fill'] .day-step {
+    gap: 0.6rem;
+    --day-step-chrome: 29rem;
+  }
+
+  :root[data-embed='fill'] .day-step .booking-day {
+    aspect-ratio: auto;
+    min-height: 0;
+    height: clamp(
+      1.75rem,
+      calc((100dvh - var(--day-step-chrome)) / 6),
+      3.25rem
+    );
+  }
+}
+
+/* Short frames (small laptops): drop the one-line business header too. */
+@media (min-width: 801px) and (max-height: 620px) {
+  :root[data-embed='fill'] .booking-business-header.compact {
+    display: none;
+  }
+
+  :root[data-embed='fill'] .day-step {
+    --day-step-chrome: 22rem;
+  }
+}
