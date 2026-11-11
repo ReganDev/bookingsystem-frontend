@@ -10,6 +10,7 @@ import * as publicApi from '../api/public'
 import { BookingCalendar } from '../components/BookingCalendar'
 import { BusinessGallery } from '../components/BusinessGallery'
 import { useAuth } from '../context/AuthContext'
+import { embedPath, isEmbedded } from '../lib/embed'
 import { withReturnTo } from '../lib/navigation'
 import type { Booking, Business, Service, TimeSlot } from '../types/api'
 
@@ -75,6 +76,11 @@ const STEP_LABELS: Record<Step, string> = {
 export function BookBusinessPage() {
   const { slug } = useParams<{ slug: string }>()
   const { isCustomer, isVerified, accessToken, user } = useAuth()
+  const embedded = isEmbedded()
+  // Inside an iframe these would load the full app in the host site's frame.
+  const newTabInEmbed = embedded
+    ? { target: '_blank', rel: 'noopener noreferrer' }
+    : {}
   const [business, setBusiness] = useState<Business | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -402,7 +408,8 @@ export function BookBusinessPage() {
 
   if (loading) {
     return (
-      <div className="panel booking-panel" role="status">
+      <div className="panel booking-panel booking-loading" role="status">
+        <span className="loading-ring" aria-hidden="true" />
         <p className="slot-hint">Loading booking page…</p>
       </div>
     )
@@ -413,8 +420,13 @@ export function BookBusinessPage() {
       <div className="panel">
         {error && <div className="error-banner">{error}</div>}
         <div className="empty-state">
-          Business not found.{' '}
-          <Link to="/book">Choose another business</Link>
+          Business not found.
+          {!embedded && (
+            <>
+              {' '}
+              <Link to="/book">Choose another business</Link>
+            </>
+          )}
         </div>
       </div>
     )
@@ -470,10 +482,15 @@ export function BookBusinessPage() {
           )}
         </p>
         <div className="actions-row">
-          <Link to="/book" className="btn btn-secondary">
-            Book with another business
-          </Link>
-          <Link to={`/book/${business.slug}`} className="btn btn-primary">
+          {!embedded && (
+            <Link to="/book" className="btn btn-secondary">
+              Book with another business
+            </Link>
+          )}
+          <Link
+            to={embedPath(`/book/${business.slug}`)}
+            className="btn btn-primary"
+          >
             Make another booking
           </Link>
         </div>
@@ -559,11 +576,17 @@ export function BookBusinessPage() {
       <BusinessGallery photos={photos} businessName={business.name} />
 
       <div className="panel booking-panel">
-        <Link to="/book" className="back-link">
-          ← All businesses
-        </Link>
+        {!embedded && (
+          <Link to="/book" className="back-link">
+            ← All businesses
+          </Link>
+        )}
 
-      <div className="booking-business-header">
+      {/* After the first step the header shrinks to one line so the step's
+          own content (the calendar, the times) starts near the top. */}
+      <div
+        className={`booking-business-header ${step > 1 ? 'compact' : ''}`}
+      >
         <div className="booking-business-avatar" aria-hidden="true">
           {business.name.charAt(0).toUpperCase()}
         </div>
@@ -630,16 +653,18 @@ export function BookBusinessPage() {
           </ol>
 
           <div className="wizard-step" key={step}>
-            <p className="wizard-step-count">Step {step} of 4</p>
-            {step > 1 && (
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm wizard-back"
-                onClick={goBack}
-              >
-                ← Back
-              </button>
-            )}
+            <div className="wizard-step-head">
+              {step > 1 && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm wizard-back"
+                  onClick={goBack}
+                >
+                  ← Back
+                </button>
+              )}
+              <p className="wizard-step-count">Step {step} of 4</p>
+            </div>
 
             {step === 1 && (
               <section className="form-section">
@@ -692,11 +717,8 @@ export function BookBusinessPage() {
             )}
 
             {step === 2 && (
-              <section className="form-section">
+              <section className="form-section day-step">
                 <h4>Pick a day</h4>
-                <p className="wizard-step-intro">
-                  Available dates are highlighted below.
-                </p>
                 <BookingCalendar
                   businessId={business.id}
                   serviceId={serviceId}
@@ -859,7 +881,11 @@ export function BookBusinessPage() {
 
                 <p className="field-hint privacy-notice">
                   Your details are sent to this business so it can manage your
-                  appointment. See our <Link to="/privacy">privacy policy</Link>.
+                  appointment. See our{' '}
+                  <Link to="/privacy" {...newTabInEmbed}>
+                    privacy policy
+                  </Link>
+                  .
                 </p>
                 <button
                   className="btn btn-primary"
@@ -928,7 +954,10 @@ export function BookBusinessPage() {
                     <p className="slot-hint">
                       No account needed — we&apos;ll email you a code to
                       confirm your booking.{' '}
-                      <Link to={withReturnTo('/login', `/book/${slug}`)}>
+                      <Link
+                        to={withReturnTo('/login', `/book/${slug}`)}
+                        {...newTabInEmbed}
+                      >
                         Have an account? Sign in
                       </Link>
                     </p>

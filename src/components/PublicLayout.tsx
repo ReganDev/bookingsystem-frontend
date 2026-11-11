@@ -1,6 +1,7 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import bookingbaseLogo from '../assets/bookingbase-logo.png'
+import { isEmbedded } from '../lib/embed'
 import { SiteFooter } from './SiteFooter'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -14,6 +15,25 @@ export function PublicLayout() {
     logout,
   } = useAuth()
   const navigate = useNavigate()
+
+  if (isEmbedded()) {
+    return (
+      <div className="app-shell public-shell embed-shell">
+        <main className="app-main">
+          <Outlet />
+        </main>
+        <footer className="embed-footer">
+          <a
+            href="https://www.bookingbase.co.uk"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Powered by BookingBase
+          </a>
+        </footer>
+      </div>
+    )
+  }
 
   return (
     <div className="app-shell public-shell">

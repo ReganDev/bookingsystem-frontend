@@ -32,6 +32,8 @@
           stored === 'dark' ||
           (stored !== 'light' &&
             window.matchMedia('(prefers-color-scheme: dark)').matches)
+        // Embedded booking pages (?embed=1) always use the light theme.
+        if (/[?&]embed=1(&|$)/.test(location.search)) dark = false
         document.documentElement.dataset.theme = dark ? 'dark' : 'light'
       } catch (e) {}
     </script>

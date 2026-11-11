@@ -4,7 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
+import { initEmbed } from './lib/embed'
 import './index.css'
+
+initEmbed()
 
 registerSW({
   immediate: true,
