@@ -23,6 +23,18 @@ export function PublicLayout() {
           <Outlet />
         </main>
         <footer className="embed-footer">
+          {isAuthenticated && isCustomer && (
+            <span className="embed-session">
+              Signed in as {user?.firstName}
+              <button
+                type="button"
+                className="embed-signout"
+                onClick={() => void logout()}
+              >
+                Sign out
+              </button>
+            </span>
+          )}
           <a
             href="https://www.bookingbase.co.uk"
             target="_blank"

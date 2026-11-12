@@ -4,6 +4,7 @@ import * as authApi from '../api/auth'
 import { ApiClientError, getApiErrorMessage } from '../api/client'
 import { AuthImageCarousel } from '../components/AuthImageCarousel'
 import { useAuth } from '../context/AuthContext'
+import { isEmbedded } from '../lib/embed'
 import { safeReturnTo, withReturnTo } from '../lib/navigation'
 
 export function LoginPage() {
@@ -75,6 +76,11 @@ export function LoginPage() {
 
       <div className="auth-split-content">
         <div className="card auth-card">
+          {isEmbedded() && (
+            <Link to={returnTo} className="back-link">
+              ← Back to booking
+            </Link>
+          )}
           <h2>Sign in</h2>
           <p>Access your customer account or business dashboard.</p>
 

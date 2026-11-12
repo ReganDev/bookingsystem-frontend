@@ -3309,3 +3309,51 @@ button {
     --day-step-chrome: 22rem;
   }
 }
+
+/* ---------- Embed mode: sign-in inside the frame ---------- */
+
+/* The sign-in page keeps only its form; the photo carousel and site footer
+   belong to the full app. */
+:root[data-embed] .auth-carousel,
+:root[data-embed] .auth-page .site-footer {
+  display: none;
+}
+
+:root[data-embed] .auth-page,
+:root[data-embed] .auth-split {
+  min-height: 0;
+}
+
+:root[data-embed] .auth-split {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:root[data-embed] .auth-split-content {
+  background: transparent;
+  padding: 1.5rem 0.75rem;
+}
+
+.embed-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+}
+
+.embed-session {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-fg-muted);
+}
+
+.embed-signout {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
