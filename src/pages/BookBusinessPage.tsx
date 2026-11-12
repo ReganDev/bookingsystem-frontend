@@ -77,7 +77,7 @@ export function BookBusinessPage() {
   const { slug } = useParams<{ slug: string }>()
   const { isCustomer, isVerified, accessToken, user } = useAuth()
   const embedded = isEmbedded()
-  // Inside an iframe these would load the full app in the host site's frame.
+  // Inside an iframe this would load the full app in the host site's frame.
   const newTabInEmbed = embedded
     ? { target: '_blank', rel: 'noopener noreferrer' }
     : {}
@@ -954,9 +954,10 @@ export function BookBusinessPage() {
                     <p className="slot-hint">
                       No account needed — we&apos;ll email you a code to
                       confirm your booking.{' '}
+                      {/* In an embed this stays in the frame: sign in there,
+                          then come straight back to this booking page. */}
                       <Link
-                        to={withReturnTo('/login', `/book/${slug}`)}
-                        {...newTabInEmbed}
+                        to={withReturnTo('/login', embedPath(`/book/${slug}`))}
                       >
                         Have an account? Sign in
                       </Link>

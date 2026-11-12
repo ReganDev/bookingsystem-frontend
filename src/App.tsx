@@ -1,10 +1,17 @@
 import { useEffect } from 'react'
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import {
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 import { AuthLayout, Layout } from './components/Layout'
 import { NetworkStatus } from './components/NetworkStatus'
 import { PublicLayout } from './components/PublicLayout'
 import { useAuth } from './context/AuthContext'
 import { resolveHashPath } from './lib/hashRedirect'
+import { safeReturnTo } from './lib/navigation'
 import { AdminBusinessDashboardPage } from './pages/AdminBusinessDashboardPage'
 import { AdminPage } from './pages/AdminPage'
 import { BookBusinessPage } from './pages/BookBusinessPage'
@@ -93,6 +100,7 @@ function GuestAuthRoute({
   allowUnverified?: boolean
 }) {
   const { isAuthenticated, isVerified, user, isLoading } = useAuth()
+  const [searchParams] = useSearchParams()
 
   if (isLoading) {
     return <div className="auth-page">Loading…</div>
@@ -110,7 +118,16 @@ function GuestAuthRoute({
         />
       )
     }
-    return <Navigate to="/" replace />
+    // Someone who followed "Sign in" from a booking page goes back to it,
+    // whether they have just signed in or were already signed in. This
+    // redirect runs as soon as the session exists, so it has to honour
+    // returnTo itself rather than leave it to the login form.
+    return (
+      <Navigate
+        to={safeReturnTo(searchParams.get('returnTo'), '/')}
+        replace
+      />
+    )
   }
 
   return children
